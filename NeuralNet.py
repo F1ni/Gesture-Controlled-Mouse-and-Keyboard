@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Input, Dropout, Dense
 from sklearn.model_selection import train_test_split
 
 randomstate = 5 # is a random seed used for reproducibility.
@@ -16,18 +18,27 @@ X_train, X_test, y_train, y_test = train_test_split(X_dataset, y_dataset, train_
 # X_train, y_train is the training data and labels and the others contain the testing data.
 # train size suggests that 75% of that data will be used for training
 
-# defines the neural network
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Input((21 * 2, )), # input layer with 42 input nodes
-    tf.keras.layers.Dropout(0.2), # prevent overfitting because you make less nodes activate
-    tf.keras.layers.Dense(20, activation='relu'), # dense layer with 20 neurons and ReLu activation.
-    # research on relu and softmax
-    tf.keras.layers.Dropout(0.4), # another dropout layer
-    # say i first tried with 1 layer and then through trial and error i added more
-    tf.keras.layers.Dense(12, activation='relu'), # another dense layer with 10 neurons
-    tf.keras.layers.Dense(numberofgestures, activation='softmax')
-    # ^ last layer with a neurons depending on the number of gestures
+model = Sequential([
+    Input(shape=(21 * 2, )),
+    Dropout(0.2),
+    Dense(20, activation='relu'),
+    Dropout(0.4),
+    Dense(12, activation='relu'),
+    Dense(numberofgestures, activation='softmax')
 ])
+
+# # defines the neural network
+# model = tf.keras.models.Sequential([
+#     tf.keras.layers.Input((21 * 2, )), # input layer with 42 input nodes
+#     tf.keras.layers.Dropout(0.2), # prevent overfitting because you make less nodes activate
+#     tf.keras.layers.Dense(20, activation='relu'), # dense layer with 20 neurons and ReLu activation.
+#     # research on relu and softmax
+#     tf.keras.layers.Dropout(0.4), # another dropout layer
+#     # say i first tried with 1 layer and then through trial and error i added more
+#     tf.keras.layers.Dense(12, activation='relu'), # another dense layer with 10 neurons
+#     tf.keras.layers.Dense(numberofgestures, activation='softmax')
+#     # ^ last layer with a neurons depending on the number of gestures
+# ])
 
 # leeky-relu, change number of layers
 # for model checkpointing - means saving the model weights and architecture
