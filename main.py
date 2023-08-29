@@ -39,6 +39,7 @@ pTime = 0  # need for frame rate
 # -----------------------------------------------------------------------------------------------------------------------------------
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
 dragclick = False
+normalclick = False
 
 def CalcLandmarkList(image, landmarks):
     img_width, img_height = image.shape[1], image.shape[0] # gets the width and height of the video screen
@@ -200,6 +201,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                 # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
                 if fingersuplist[0] == 1 and fingersuplist[1] == 0:
+                    normalclick = False
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
                     # coordinates to move mouse
@@ -224,10 +226,12 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     # move the mouse
                     mouse.move(xpos, ypos, duration=0.001) # with pyautogui it made fps low so changed to mouse library
                     # changed the libraryand it is much smoother now
+                # left click
                 elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
                     # distance between two coord formula - normal maths
-                    if distance < 23:
+                    if distance < 23 and not normalclick:
+                        normalclick = True
                         mouse.click()
                         time.sleep(0.5)
 
