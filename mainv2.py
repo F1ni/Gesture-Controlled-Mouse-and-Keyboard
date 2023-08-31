@@ -200,27 +200,52 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 # draw on show
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                 # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                if fingersuplist[0] == 1 and fingersuplist[1] == 0:
-                    normalclick = False
+                if fingersuplist[0] == 1 and fingersuplist[3] == 0:
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
+                    distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
                     # coordinates to move mouse
-                    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+                    if distanceofthumbandindex > 55:
+                        normalclick = False
+                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
                     # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
-                    distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
-                    # drag click
-                    if distanceofthumbandindex < 30: # if distance is less than a certain numebr
+
+                    print(distanceofthumbandindex)
+                    # left click
+                    if distanceofthumbandindex < 42 and not normalclick: # if distance is less than a certain number
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                        dragclick = True # makes it so that it wont always do the mouse.release function
+                        normalclick = True
+                        mouse.click()
+                        print("click")
+                        time.sleep(0.5)
+
+                    #     dragclick = True # makes it so that it won't always do the mouse.release function
+                    #     # changed the libraryand it is much smoother now
+                    #     mouse.press(button='left') # holds the mouse down
+                    # else:
+                    #     if dragclick:  # so that it does not realease the mouse if the part above never even eran
+                    #         mouse.release(button='left')
+                    #         dragclick = False
+
+                    # drag click
+                    if fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
+                        # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                        dragclick = True  # makes it so that it won't always do the mouse.release function
                         # changed the libraryand it is much smoother now
-                        mouse.press(button='left') # holds the mouse down
+                        mouse.press(button='left')  # holds the mouse down
                     else:
-                        if dragclick:  # so that it does not realease the mouse if the part above never even eran
+                        if dragclick:# so that it does not realease the mouse if the part above never even eran
                             mouse.release(button='left')
                             dragclick = False
+                        # distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+                        # # distance between two coord formula - normal maths
+                        # if distance < 23 and not normalclick:
+                        #     normalclick = True
+                        #     mouse.click()
+                        #     time.sleep(0.5)
 
 
                     # move the mouse
