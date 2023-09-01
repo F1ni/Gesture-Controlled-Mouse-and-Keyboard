@@ -40,6 +40,7 @@ pTime = 0  # need for frame rate
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
 dragclick = False
 normalclick = False
+rightclick = False
 
 def CalcLandmarkList(image, landmarks):
     img_width, img_height = image.shape[1], image.shape[0] # gets the width and height of the video screen
@@ -201,6 +202,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                 # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
                 if fingersuplist[0] == 1 and fingersuplist[3] == 0:
+                    rightclick = False
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
                     distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
@@ -213,7 +215,6 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
                     # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
 
-                    print(distanceofthumbandindex)
                     # left click
                     if distanceofthumbandindex < 42 and not normalclick: # if distance is less than a certain number
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
@@ -221,14 +222,6 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                         mouse.click()
                         print("click")
                         time.sleep(0.5)
-
-                    #     dragclick = True # makes it so that it won't always do the mouse.release function
-                    #     # changed the libraryand it is much smoother now
-                    #     mouse.press(button='left') # holds the mouse down
-                    # else:
-                    #     if dragclick:  # so that it does not realease the mouse if the part above never even eran
-                    #         mouse.release(button='left')
-                    #         dragclick = False
 
                     # drag click
                     if fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
@@ -240,13 +233,6 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                         if dragclick:# so that it does not realease the mouse if the part above never even eran
                             mouse.release(button='left')
                             dragclick = False
-                        # distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
-                        # # distance between two coord formula - normal maths
-                        # if distance < 23 and not normalclick:
-                        #     normalclick = True
-                        #     mouse.click()
-                        #     time.sleep(0.5)
-
 
                     # move the mouse
                     mouse.move(xpos, ypos, duration=0.001) # with pyautogui it made fps low so changed to mouse library
@@ -262,7 +248,8 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
                 # right click
                 # if index finger is up and middle two fingers are down
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[3] == 1:
+                elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[3] == 1 and not rightclick:
+                    rightclick = True
                     mouse.right_click()
                     time.sleep(0.5)
 
