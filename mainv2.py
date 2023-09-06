@@ -202,7 +202,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 # draw on show
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                 # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1:
+                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1: # now will change the mouse
                     rightclick = False
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
