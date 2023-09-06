@@ -197,56 +197,68 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
                 whichhand = whichHand(landmark_list)  # checks which hand is showing
                 fingersuplist = fingersUp(landmark_list, whichhand)
+                print(fingersuplist)
 
                 # draw on show
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                 # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                if fingersuplist[0] == 1 and fingersuplist[3] == 0:
+                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1:
                     rightclick = False
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
                     distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
                     # coordinates to move mouse
-                    if distanceofthumbandindex > 55:
-                        normalclick = False
-                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
-                    # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
 
-                    # left click
-                    if distanceofthumbandindex < 42 and not normalclick: # if distance is less than a certain number
+                    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+
+
+                    # move the mouse
+                    mouse.move(xpos, ypos, duration=0.001) # with pyautogui it made fps low so changed to mouse library
+                    # finds distance between the thumb and the cindex finger so to check if drag click should be enabled or not
+
+                    # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
+                    if distanceofthumbandindex < 42 and not normalclick:  # if distance is less than a certain number
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         normalclick = True
                         mouse.click()
                         print("click")
                         time.sleep(0.5)
+                    else:
+                        normalclick = False
+                    # changed the library and it is much smoother now
 
-                    # drag click
-                    if fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
-                        # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
+                elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
+                    # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+
+                    # move the mouse
+                    mouse.move(xpos, ypos, duration=0.001)  # with pyautogui it made fps low so changed to mouse library
+                    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+                    print(distance)
+                    if distance < 20:
                         dragclick = True  # makes it so that it won't always do the mouse.release function
                         # changed the libraryand it is much smoother now
                         mouse.press(button='left')  # holds the mouse down
-                    else:
-                        if dragclick:# so that it does not realease the mouse if the part above never even eran
+                    else:  # so that it does not realease the mouse if the part above never even eran
+                        if dragclick:
                             mouse.release(button='left')
                             dragclick = False
+                # # left click
+                # elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
+                #
+                #     # distance between two coord formula - normal maths
+                #     if distance < 23 and not normalclick:
+                #         normalclick = True
+                #         mouse.click()
+                #         time.sleep(0.5)
 
-                    # move the mouse
-                    mouse.move(xpos, ypos, duration=0.001) # with pyautogui it made fps low so changed to mouse library
-                    # changed the libraryand it is much smoother now
-                # left click
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
-                    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
-                    # distance between two coord formula - normal maths
-                    if distance < 23 and not normalclick:
-                        normalclick = True
-                        mouse.click()
-                        time.sleep(0.5)
-
-                # right click
+                # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                 # if index finger is up and middle two fingers are down
                 elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[3] == 1 and not rightclick:
                     rightclick = True
