@@ -27,19 +27,6 @@ model = Sequential([
     Dense(numberofgestures, activation='softmax')
 ])
 
-# # defines the neural network
-# model = tf.keras.models.Sequential([
-#     tf.keras.layers.Input((21 * 2, )), # input layer with 42 input nodes
-#     tf.keras.layers.Dropout(0.2), # prevent overfitting because you make less nodes activate
-#     tf.keras.layers.Dense(20, activation='relu'), # dense layer with 20 neurons and ReLu activation.
-#     # research on relu and softmax
-#     tf.keras.layers.Dropout(0.4), # another dropout layer
-#     # say i first tried with 1 layer and then through trial and error i added more
-#     tf.keras.layers.Dense(12, activation='relu'), # another dense layer with 10 neurons
-#     tf.keras.layers.Dense(numberofgestures, activation='softmax')
-#     # ^ last layer with a neurons depending on the number of gestures
-# ])
-
 # leeky-relu, change number of layers
 # for model checkpointing - means saving the model weights and architecture
 savingmodel = tf.keras.callbacks.ModelCheckpoint(modelsavepath, verbose=1, save_weights_only=False)

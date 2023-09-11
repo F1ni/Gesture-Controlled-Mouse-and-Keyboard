@@ -1,4 +1,3 @@
-import csv
 import cv2
 import mediapipe as mp
 import mouse
@@ -9,6 +8,7 @@ import numpy as np
 import pyautogui
 import time
 import tensorflow as tf
+import csv
 
 
 
@@ -70,11 +70,10 @@ def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv fi
         time.sleep(0.5)
 
 
-# does something
-def flattenlist(iterableList):  # better name for this
+def flattenlist(iterableList):
     for it in iterableList:
         for element in it:
-            yield element  # what does this function do??? a copy of itertools.chains.from_iterable()
+            yield element
 # The yield keyword is used to yield (produce) each element as the generator produces values.
 # This effectively flattens the nested structure of the iterables into a single flat sequence of elements.
 
@@ -189,7 +188,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 # wrist where the starting of the wrist is the base point
                 # in total there are 21 hand landmarks so the normalised list gives\
                 # you 42 for each x and y value
-                # this list will be used for the neural network2
+                # this list will be used for the neural network
                 # get tip of index and middle finger
                 LoggingHandGestures(normalisedLandmarkList)
                 xindex, yindex = landmark_list[8][0], landmark_list[8][1]
@@ -211,7 +210,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
 
                     cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
                     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
 
