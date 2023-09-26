@@ -9,6 +9,7 @@ import pyautogui
 import time
 import tensorflow as tf
 import csv
+import tkinter
 
 
 
@@ -18,9 +19,9 @@ mp_drawing = mp.solutions.drawing_utils
 # -----------------------------------------------------------------------------------------------------------------------------------
 wCam, hCam = 640, 480
 frameR = 100  # reduce the fram so that you don't have to go right to the bottom of teh screen
-# smoothening = 3
-# prevLocX, prevLocY = 0, 0
-# curLocX, curLoxY = 0, 0
+smoothening = 4 # slider for this
+prevLocX, prevLocY = 0, 0
+curLocX, curLoxY = 0, 0
 # -----------------------------------------------------------------------------------------------------------------------------------
 
 cap = cv2.VideoCapture(0)
@@ -153,11 +154,6 @@ def DetectHands(image, handsmodel):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     return image, result
 
-with open('Model/GestureLabels.csv', encoding='utf-8-sig') as f:
-    keypoint_classifier_labels = csv.reader(f)
-    keypoint_classifier_labels = [row[0] for row in keypoint_classifier_labels]
-    # may not need this code
-
 
 with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
     while cap.isOpened():
@@ -213,9 +209,12 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
                     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
+                    curLocX = prevLocX + (xpos - prevLocX) / smoothening
+                    curLocY = prevLocY + (ypos - prevLocY) / smoothening
 
                     # move the mouse
-                    mouse.move(xpos, ypos, duration=0.001) # with pyautogui it made fps low so changed to mouse library
+                    mouse.move(xpos, ypos) # with pyautogui it made fps low so changed to mouse library, , duration=0.001
+                    prevLocX, prevLocY = curLocX, curLocY # this smoothening worked out much better than the library one
                     # finds distance between the thumb and the cindex finger so to check if drag click should be enabled or not
 
                     # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
@@ -249,13 +248,6 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                             mouse.release(button='left')
                             dragclick = False
                 # # left click
-                # elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
-                #
-                #     # distance between two coord formula - normal maths
-                #     if distance < 23 and not normalclick:
-                #         normalclick = True
-                #         mouse.click()
-                #         time.sleep(0.5)
 
                 # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                 # if index finger is up and middle two fingers are down
