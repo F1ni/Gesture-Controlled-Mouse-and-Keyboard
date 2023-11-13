@@ -43,7 +43,7 @@ dragclick = False
 normalclick = False
 rightclick = False
 
-def CalcLandmarkList(image, landmarks):
+def CalcLandmarkList(image, landmarks): # algorithm
     img_width, img_height = image.shape[1], image.shape[0] # gets the width and height of the video screen
     landmark_point = []
     for i, landmark in enumerate(landmarks.landmark):
@@ -56,7 +56,7 @@ def CalcLandmarkList(image, landmarks):
     return landmark_point
 
 
-def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv file so the neural network can use it to compare
+def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
@@ -71,7 +71,7 @@ def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv fi
         time.sleep(0.5)
 
 
-def flattenlist(iterableList):
+def flattenlist(iterableList): # ALGORITHM
     for it in iterableList:
         for element in it:
             yield element
@@ -79,7 +79,7 @@ def flattenlist(iterableList):
 # This effectively flattens the nested structure of the iterables into a single flat sequence of elements.
 
 # returns an array of how many fingers will be up, ignores the thumb
-def fingersUp(landmarkList, which_hand):
+def fingersUp(landmarkList, which_hand): # algorithm
     if landmarkList[8][1] < landmarkList[6][1]:
         fingersuplist[0] = 1
     else:
@@ -112,7 +112,7 @@ def fingersUp(landmarkList, which_hand):
     return fingersuplist
 
 
-def whichHand(landmarklist):
+def whichHand(landmarklist): # algorithm
     if (landmarklist[20][0] - landmarklist[16][0]) < 0:
         # checks if tip of the pinky finger - 4th finger is negative which means it will be left hand
         return "LEFT"
@@ -120,7 +120,7 @@ def whichHand(landmarklist):
         return "RIGHT"
 
 
-def normaliseLandmarkList(landmarkList):
+def normaliseLandmarkList(landmarkList): # algorithm
     # converting to relative coordinates so i can use it in a neural network
     b_x, b_y = 0, 0  # base values, wrist coordinates (x, y)
     for i, lmk_point in enumerate(landmarkList):
@@ -145,7 +145,6 @@ def normaliseLandmarkList(landmarkList):
         # maps makes all elements do the normalise function
         return landmarkList
 
-
 def DetectHands(image, handsmodel):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # changes colour
     image.flags.writeable = False  # makes it not writeable
@@ -154,12 +153,18 @@ def DetectHands(image, handsmodel):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     return image, result
 
+def WhichGesture(gesturenumber):
+    if gesturenumber == 0:
+        mouse.wheel(delta=1)
+    elif gesturenumber == 1:
+        mouse.wheel(delta=-1) # when doing key algorithm for this include the rest of the psuedocode that will be there
+
 
 with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
     while cap.isOpened():
         # break by pressing esc
         key = cv2.waitKey(10)
-        if key == 27:
+        if key == 27: # esc key
             break
 
         if key == 107: # k
@@ -203,7 +208,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
                     distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
                     # coordinates to move mouse
-
+                    # could be a classed as an algorithm
 
                     cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
                     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
@@ -233,8 +238,8 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                     cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
                     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
-
+                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight)) # interpolation
+                    # franeR, wCam part makes it so that the pink box represents the whole screen
                     # move the mouse
                     mouse.move(xpos, ypos, duration=0.001)  # with pyautogui it made fps low so changed to mouse library
                     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
@@ -247,7 +252,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                         if dragclick:
                             mouse.release(button='left')
                             dragclick = False
-                # # left click
+
 
                 # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                 # if index finger is up and middle two fingers are down
@@ -274,6 +279,8 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                         mouse.wheel(delta=1)
                     elif whichhandgesture == 1:
                         mouse.wheel(delta=-1)
+
+
 
         # frame rate
         cTime = time.time()
