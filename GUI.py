@@ -136,6 +136,7 @@ class MouseSettingsWindow:
         window.destroy()
 
 
+
 class InstructionsWindow:
     def __init__(self):
         instructionsWindow = Toplevel()
