@@ -47,9 +47,9 @@ class Main:
 
 class GestureSettingsWindow:
     def __init__(self):
-        gesturesettingswindow = Toplevel()
+        gesturesettingswindow = Toplevel(bg=backgroundcolor)
         gesturesettingswindow.title("Gesture Settings")
-        self.gesturesettingsframe = Frame(gesturesettingswindow)
+
         gesturesettingswindow.geometry("700x500")
 
         self.gesturelist = [
@@ -59,14 +59,25 @@ class GestureSettingsWindow:
             "drag click",
             "right click"
         ]
-        self.gesturesettingstitlelabel = Label(self.gesturesettingsframe, text="Gesture Settings here")
-        self.gesturesettingstitlelabel.pack(padx=10, pady=10)
+        # frame 1
+        self.gestureframe1 = Frame(gesturesettingswindow)
+        self.pointerlabel = Label(self.gestureframe1, text="Pointer")
+        self.pointerlabel.pack(padx=10, pady=10)
 
         self.option1 = StringVar()
-        self.dropdown1 = OptionMenu(self.gesturesettingsframe, self.option1, *self.gesturelist)
+        self.dropdown1 = OptionMenu(self.gestureframe1, self.option1, *self.gesturelist)
         self.dropdown1.pack()
+        self.gestureframe1.grid(row=0, column=0)
+        # frame 2
+        self.gestureframe2 = Frame(gesturesettingswindow)
+        self.leftclicklabel = Label(self.gestureframe1, text="Left Click")
+        self.leftclicklabel.pack(padx=10, pady=10)
 
-        self.gesturesettingsframe.pack()
+        self.option2 = StringVar()
+        self.dropdown2 = OptionMenu(self.gestureframe2, self.option2, *self.gesturelist)
+        self.dropdown2.pack()
+        self.gestureframe2.grid(row=1, column=0)
+
 
 
 class MouseSettingsWindow:
@@ -113,8 +124,16 @@ class MouseSettingsWindow:
         self.scrollSlider = Scale(self.scrollingframe, orient=HORIZONTAL, from_=1, to=5, length=500)
         self.scrollSlider.set(2)
         self.scrollSlider.pack()
-
         self.scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+
+        # back button
+        self.buttonframe = Frame(mousesettingswindow)
+        self.backbutton = Button(self.buttonframe, text="back", command=lambda: self.back(mousesettingswindow))
+        self.backbutton.pack()
+        self.buttonframe.grid(row=4, column=0)
+
+    def back(self, window):
+        window.destroy()
 
 
 class InstructionsWindow:
