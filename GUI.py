@@ -1,4 +1,5 @@
 from tkinter import *
+from PIL import Image, ImageTk
 
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
@@ -29,6 +30,7 @@ class Main:
 
         self.buttonframe.grid(row=0, column=0, sticky=N + S)
 
+
         # video frame
         self.VideoFrame = Frame(main)
         self.label = Label(self.VideoFrame, text="Video shown here", padx=10, pady=10)
@@ -47,6 +49,8 @@ class Main:
 
 class GestureSettingsWindow:
     def __init__(self):
+        global pointerimage
+        global dragclickimage
         gesturesettingswindow = Toplevel(bg=backgroundcolor)
         gesturesettingswindow.title("Gesture Settings")
 
@@ -62,21 +66,40 @@ class GestureSettingsWindow:
         # frame 1
         self.gestureframe1 = Frame(gesturesettingswindow)
         self.pointerlabel = Label(self.gestureframe1, text="Pointer")
-        self.pointerlabel.pack(padx=10, pady=10)
+        self.pointerlabel.grid(row=0, column=0, padx=10, pady=10)
+        # show image
+        pointerimage = Image.open("Photos/pointer.jpg").resize((150, 155))
+        pointerimageTK = ImageTk.PhotoImage(pointerimage)
+        pointerimagelabel = Label(self.gestureframe1, image=pointerimageTK)
+        pointerimagelabel.grid(row=1, column=0)
+        pointerimage.image = pointerimageTK
 
+        # dropdown
         self.option1 = StringVar()
+        self.option1.set(self.gesturelist[2])
         self.dropdown1 = OptionMenu(self.gestureframe1, self.option1, *self.gesturelist)
-        self.dropdown1.pack()
-        self.gestureframe1.grid(row=0, column=0)
-        # frame 2
-        self.gestureframe2 = Frame(gesturesettingswindow)
-        self.leftclicklabel = Label(self.gestureframe1, text="Left Click")
-        self.leftclicklabel.pack(padx=10, pady=10)
+        self.dropdown1.grid(row=2, column=0)
+        self.gestureframe1.grid(row=0, column=0, padx=10, pady=10)
 
+        # frame 2 ---------------------------------------------------------------
+        self.gestureframe2 = Frame(gesturesettingswindow)
+        self.leftclicklabel = Label(self.gestureframe2, text="Drag Click")
+        self.leftclicklabel.grid(row=0, column=0, padx=10, pady=10)
+
+        # show image
+        dragclickimage = Image.open("Photos/dragclick.jpg").resize((150, 155))
+        dragclickimageTk = ImageTk.PhotoImage(dragclickimage)
+        dragclickimagelabel = Label(self.gestureframe2, image=dragclickimageTk)
+        dragclickimagelabel.grid(row=1, column=0)
+        dragclickimage.image = dragclickimageTk # keep a reference to the image or something???
+        # something called garbage collection or something???
+
+        # dropdown
         self.option2 = StringVar()
+        self.option2.set(self.gesturelist[3])
         self.dropdown2 = OptionMenu(self.gestureframe2, self.option2, *self.gesturelist)
-        self.dropdown2.pack()
-        self.gestureframe2.grid(row=1, column=0)
+        self.dropdown2.grid(row=2, column=0)
+        self.gestureframe2.grid(row=0, column=1, padx=10, pady=10)
 
 
 
@@ -149,7 +172,7 @@ class InstructionsWindow:
         self.label1.pack(padx=10, pady=10)
         # more photos of the gestures here to explain how to use the program
 
-        self.frame.pack()
+        self.instructionsframe.pack()
 
 
 root = Tk()
