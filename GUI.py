@@ -63,6 +63,7 @@ class GestureSettingsWindow:
             "drag click",
             "right click"
         ]
+
         # frame 1
         self.gestureframe1 = Frame(gesturesettingswindow)
         self.pointerlabel = Label(self.gestureframe1, text="Pointer")
