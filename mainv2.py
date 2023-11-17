@@ -9,17 +9,14 @@ import pyautogui
 import time
 import tensorflow as tf
 import csv
-import tkinter
-
-
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 # -----------------------------------------------------------------------------------------------------------------------------------
 wCam, hCam = 640, 480
-frameR = 100  # reduce the fram so that you don't have to go right to the bottom of teh screen
-smoothening = 4 # slider for this
+frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
+smoothening = 7  # slider for this
 prevLocX, prevLocY = 0, 0
 curLocX, curLoxY = 0, 0
 # -----------------------------------------------------------------------------------------------------------------------------------
@@ -43,8 +40,9 @@ dragclick = False
 normalclick = False
 rightclick = False
 
-def CalcLandmarkList(image, landmarks): # algorithm
-    img_width, img_height = image.shape[1], image.shape[0] # gets the width and height of the video screen
+
+def CalcLandmarkList(image, landmarks):  # algorithm
+    img_width, img_height = image.shape[1], image.shape[0]  # gets the width and height of the video screen
     landmark_point = []
     for i, landmark in enumerate(landmarks.landmark):
         landmark_x = int(landmark.x * img_width)
@@ -52,19 +50,20 @@ def CalcLandmarkList(image, landmarks): # algorithm
         # convert the relative coordinates of the landmarks provided by the Mediapipe library into
         # absolute pixel coordinates on the image
 
-        landmark_point.append([landmark_x, landmark_y])  # we do not need z point as we do not want to change it / normalise it
+        landmark_point.append(
+            [landmark_x, landmark_y])  # we do not need z point as we do not want to change it / normalise it
     return landmark_point
 
 
-
-def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(
+        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
-        openedfile = open(gesturespath, 'a', newline='') # opens the path of the gestures folder and makes it writeable
+        openedfile = open(gesturespath, 'a', newline='')  # opens the path of the gestures folder and makes it writeable
         # makes it so that no new line is created
-        writer = csv.writer(openedfile) # opened using csv writer
-        writer.writerow([4, *normalised_landmark_list]) # writes the row with a 3 at the beginning and then
+        writer = csv.writer(openedfile)  # opened using csv writer
+        writer.writerow([4, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
         # screenshot of this not working on discord server
         # it still kept overwriting the data so this did not work
         # instead of writing it should be a which means appending
@@ -72,15 +71,17 @@ def LoggingHandGestures(normalised_landmark_list): # logs the list into a csv fi
         time.sleep(0.5)
 
 
-def flattenlist(iterableList): # ALGORITHM
+def flattenlist(iterableList):  # ALGORITHM
     for it in iterableList:
         for element in it:
             yield element
+
+
 # The yield keyword is used to yield (produce) each element as the generator produces values.
 # This effectively flattens the nested structure of the iterables into a single flat sequence of elements.
 
 # returns an array of how many fingers will be up, ignores the thumb
-def fingersUp(landmarkList, which_hand): # algorithm
+def fingersUp(landmarkList, which_hand):  # algorithm
     if landmarkList[8][1] < landmarkList[6][1]:
         fingersuplist[0] = 1
     else:
@@ -101,10 +102,12 @@ def fingersUp(landmarkList, which_hand): # algorithm
     else:
         fingersuplist[3] = 0
 
-    if which_hand == "RIGHT" and landmarkList[4][0] < landmarkList[2][0]:  # Right Thumb # checks if the x coord of the tip of the thumb is
+    if which_hand == "RIGHT" and landmarkList[4][0] < landmarkList[2][
+        0]:  # Right Thumb # checks if the x coord of the tip of the thumb is
         # less than the index 2 landmark
         fingersuplist[4] = 1
-    elif which_hand == "LEFT" and landmarkList[4][0] > landmarkList[2][0]:  # Left Thumb # checks if the x coord of the tip of the thumb is
+    elif which_hand == "LEFT" and landmarkList[4][0] > landmarkList[2][
+        0]:  # Left Thumb # checks if the x coord of the tip of the thumb is
         # greater than the index 2 landmark
         fingersuplist[4] = 1
     else:
@@ -113,7 +116,7 @@ def fingersUp(landmarkList, which_hand): # algorithm
     return fingersuplist
 
 
-def whichHand(landmarklist): # algorithm
+def whichHand(landmarklist):  # algorithm
     if (landmarklist[20][0] - landmarklist[16][0]) < 0:
         # checks if tip of the pinky finger - 4th finger is negative which means it will be left hand
         return "LEFT"
@@ -121,30 +124,32 @@ def whichHand(landmarklist): # algorithm
         return "RIGHT"
 
 
-def normaliseLandmarkList(landmarkList): # algorithm
+def normaliseLandmarkList(landmarkList):  # algorithm
     # converting to relative coordinates so i can use it in a neural network
     b_x, b_y = 0, 0  # base values, wrist coordinates (x, y)
     for i, lmk_point in enumerate(landmarkList):
         # i is the index of the current element (lmk_point) in the landmarkList.
         # lmk_point is the actual value of the current element in the landmarkList.
         if i == 0:  # if it is at index (wrist) which is 0 then
-            b_x = lmk_point[0] # represents the base coordinates of the wrists x and y position
+            b_x = lmk_point[0]  # represents the base coordinates of the wrists x and y position
             b_y = lmk_point[1]
 
-        landmarkList[i][0] = landmarkList[i][0] - b_x  # gets each x value and subtracts it from the base value of the wrist
+        landmarkList[i][0] = landmarkList[i][
+                                 0] - b_x  # gets each x value and subtracts it from the base value of the wrist
         # this essentially makes all the points relative to the list
         landmarkList[i][1] = landmarkList[i][1] - b_y  # gets each y value
 
         # mediapipe will provide 3d coordinates for the landmarks so we will need to flatten them into a 1d vector (2d arrray)
         landmarkList = list(flattenlist(landmarkList))
-        max_value = max(list(map(abs, landmarkList))) # for each element in the landmark list it will do absolute on it
+        max_value = max(list(map(abs, landmarkList)))  # for each element in the landmark list it will do absolute on it
 
-        def normalise_(n): # local function so can only be used in this function
+        def normalise_(n):  # local function so can only be used in this function
             return n / max_value
 
         landmarkList = list(map(normalise_, landmarkList))  # applying the normalise function to all of them
         # maps makes all elements do the normalise function
         return landmarkList
+
 
 def DetectHands(image, handsmodel):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # changes colour
@@ -154,23 +159,24 @@ def DetectHands(image, handsmodel):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     return image, result
 
+
 def WhichGesture(gesturenumber):
     if gesturenumber == 0:
         mouse.wheel(delta=1)
     elif gesturenumber == 1:
-        mouse.wheel(delta=-1) # when doing key algorithm for this include the rest of the psuedocode that will be there
+        mouse.wheel(delta=-1)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
 
 with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
     while cap.isOpened():
         # break by pressing esc
         key = cv2.waitKey(10)
-        if key == 27: # esc key
+        if key == 27:  # esc key
             break
 
-        if key == 107: # k
+        if key == 107:  # k
             mode = 3
-        elif key == 110: # n
+        elif key == 110:  # n
             mode = 0
 
         success, img = cap.read()  # reads the video captured and returns two values
@@ -202,12 +208,13 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
                 # draw on show
                 cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
-                # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1: # now will change the mouse
+                # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
+                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1:  # now will change the mouse
                     rightclick = False
                     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
-                    distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+                    distanceofthumbandindex = int(
+                        math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
                     # coordinates to move mouse
                     # could be a classed as an algorithm
 
@@ -219,12 +226,14 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     curLocY = prevLocY + (ypos - prevLocY) / smoothening
 
                     # move the mouse
-                    mouse.move(xpos, ypos) # with pyautogui it made fps low so changed to mouse library, , duration=0.001
-                    prevLocX, prevLocY = curLocX, curLocY # this smoothening worked out much better than the library one
-                    # finds distance between the thumb and the cindex finger so to check if drag click should be enabled or not
-
+                    mouse.move(xpos, ypos)
+                    # with pyautogui it made fps low so changed to mouse library, , duration=0.001
+                    prevLocX, prevLocY = curLocX, curLocY
+                    # this smoothening worked out much better than the library one
+                    # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
+                    print(distanceofthumbandindex)
                     # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
-                    if distanceofthumbandindex < 42 and not normalclick:  # if distance is less than a certain number
+                    if distanceofthumbandindex < 75 and not normalclick:  # if distance is less than a certain number
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         normalclick = True
                         mouse.click()
@@ -235,11 +244,12 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     # changed the library and it is much smoother now
 
                 # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
+                elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
+                    4] == 1:
                     # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                     cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
                     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight)) # interpolation
+                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
                     # franeR, wCam part makes it so that the pink box represents the whole screen
                     # move the mouse
                     mouse.move(xpos, ypos, duration=0.001)  # with pyautogui it made fps low so changed to mouse library
@@ -257,7 +267,8 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
 
                 # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                 # if index finger is up and middle two fingers are down
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[3] == 1 and not rightclick:
+                elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[
+                    3] == 1 and not rightclick:
                     rightclick = True
                     mouse.right_click()
                     time.sleep(0.5)
@@ -268,24 +279,25 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                 else:
                     # print(np.array(normalisedLandmarkList).shape)
                     # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging
-                    normalisedLandmarkList = np.array(normalisedLandmarkList, dtype=np.float32) # the normalised data at first was of type float64, however the
+                    normalisedLandmarkList = np.array(normalisedLandmarkList,
+                                                      dtype=np.float32)  # the normalised data at first was of type float64, however the
                     # model will only take in data of type float 32, so had to convert it
-                    normalisedLandmarkList = normalisedLandmarkList.reshape(1, -1) # -1  is used when you dont know or want
+                    normalisedLandmarkList = normalisedLandmarkList.reshape(1,
+                                                                            -1)  # -1  is used when you dont know or want
                     # to explicitly tell the dimension of that axis
                     prediction = model.predict(normalisedLandmarkList)
                     print("prediction: ")
                     whichhandgesture = np.argmax(np.squeeze(prediction))
                     print(np.argmax(np.squeeze(prediction)))
-                    if whichhandgesture == 0:
-                        mouse.wheel(delta=1)
-                    elif whichhandgesture == 1:
-                        mouse.wheel(delta=-1)
 
-
+                    # if whichhandgesture == 0:
+                    #     mouse.wheel(delta=1)
+                    # elif whichhandgesture == 1:
+                    #     mouse.wheel(delta=-1)
 
         # frame rate
         cTime = time.time()
-        fps = 1 / (cTime - pTime) # float so make into an int
+        fps = 1 / (cTime - pTime)  # float so make into an int
         pTime = cTime
         cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
         # show image

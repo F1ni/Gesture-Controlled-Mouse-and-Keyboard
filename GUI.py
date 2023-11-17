@@ -3,33 +3,33 @@ from PIL import Image, ImageTk
 
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
+buttoncolor = "#636363"
 
 
 class Main:
     def __init__(self, main):
         self.buttonframe = Frame(main, bg=backgroundcolor)
 
-        self.StartButton = Button(self.buttonframe, text="Start", padx=20, pady=10, bg="#636363", fg=textcolor)
+        self.StartButton = Button(self.buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor)
         self.StartButton.grid(row=0, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
 
-        self.StopButton = Button(self.buttonframe, text="Stop", padx=20, pady=10, bg="#636363", fg=textcolor)
+        self.StopButton = Button(self.buttonframe, text="Stop", padx=20, pady=10, bg=buttoncolor, fg=textcolor)
         self.StopButton.grid(row=1, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
 
-        self.InstructionsPageButton = Button(self.buttonframe, text="Instructions", padx=20, pady=10, bg="#636363"
+        self.InstructionsPageButton = Button(self.buttonframe, text="Instructions", padx=20, pady=10, bg=buttoncolor
                                              , fg=textcolor, command=self.OpenInstructionsWindow)
         self.InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W + E)
 
-        self.GestureSettingsPageButton = Button(self.buttonframe, text="Gesture Settings", bg="#636363", fg=textcolor,
+        self.GestureSettingsPageButton = Button(self.buttonframe, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
                                                 command=self.OpenGestureSettingsWindow, padx=20, pady=10)
         self.GestureSettingsPageButton.grid(row=3, column=0, padx=10, pady=10, sticky=W + E)
 
-        self.MouseSettingsPageButton = Button(self.buttonframe, text="Mouse Settings", bg="#636363", fg=textcolor,
+        self.MouseSettingsPageButton = Button(self.buttonframe, text="Mouse Settings", bg=buttoncolor, fg=textcolor,
                                               command=self.OpenMouseSettingsWindow, padx=20, pady=10)
 
         self.MouseSettingsPageButton.grid(row=4, column=0, padx=10, pady=10, sticky=W + E)
 
         self.buttonframe.grid(row=0, column=0, sticky=N + S)
-
 
         # video frame
         self.VideoFrame = Frame(main)
@@ -51,6 +51,10 @@ class GestureSettingsWindow:
     def __init__(self):
         global pointerimage
         global dragclickimage
+        global rightclickimage
+        global scrollupimage
+        global scrolldownimage
+
         gesturesettingswindow = Toplevel(bg=backgroundcolor)
         gesturesettingswindow.title("Gesture Settings")
 
@@ -64,7 +68,7 @@ class GestureSettingsWindow:
             "right click"
         ]
 
-        # frame 1
+        # frame 1 -------------------------------------------------------------
         self.gestureframe1 = Frame(gesturesettingswindow)
         self.pointerlabel = Label(self.gestureframe1, text="Pointer")
         self.pointerlabel.grid(row=0, column=0, padx=10, pady=10)
@@ -84,15 +88,15 @@ class GestureSettingsWindow:
 
         # frame 2 ---------------------------------------------------------------
         self.gestureframe2 = Frame(gesturesettingswindow)
-        self.leftclicklabel = Label(self.gestureframe2, text="Drag Click")
-        self.leftclicklabel.grid(row=0, column=0, padx=10, pady=10)
+        self.dragclicklabel = Label(self.gestureframe2, text="Drag Click")
+        self.dragclicklabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
         dragclickimage = Image.open("Photos/dragclick.jpg").resize((150, 155))
         dragclickimageTk = ImageTk.PhotoImage(dragclickimage)
         dragclickimagelabel = Label(self.gestureframe2, image=dragclickimageTk)
         dragclickimagelabel.grid(row=1, column=0)
-        dragclickimage.image = dragclickimageTk # keep a reference to the image or something???
+        dragclickimage.image = dragclickimageTk  # keep a reference to the image or something???
         # something called garbage collection or something???
 
         # dropdown
@@ -102,6 +106,73 @@ class GestureSettingsWindow:
         self.dropdown2.grid(row=2, column=0)
         self.gestureframe2.grid(row=0, column=1, padx=10, pady=10)
 
+        # frame 3 ---------------------------------------------------------------
+        self.gestureframe3 = Frame(gesturesettingswindow)
+        self.rightclicklabel = Label(self.gestureframe3, text="Right Click")
+        self.rightclicklabel.grid(row=0, column=0, padx=10, pady=10)
+
+        # show image
+        rightclickimage = Image.open("Photos/rightclick.jpg").resize((150, 155))
+        rightclickimageTk = ImageTk.PhotoImage(rightclickimage)
+        rightclickimagelabel = Label(self.gestureframe3, image=rightclickimageTk)
+        rightclickimagelabel.grid(row=1, column=0)
+        rightclickimage.image = rightclickimageTk  # keep a reference to the image or something???
+        # something called garbage collection or something???
+
+        # dropdown
+        self.option3 = StringVar()
+        self.option3.set(self.gesturelist[4])
+        self.dropdown3 = OptionMenu(self.gestureframe3, self.option3, *self.gesturelist)
+        self.dropdown3.grid(row=2, column=0)
+        self.gestureframe3.grid(row=0, column=2, padx=10, pady=10)
+
+        # frame 4 ---------------------------------------------------------------
+        self.gestureframe4 = Frame(gesturesettingswindow)
+        self.scrolluplabel = Label(self.gestureframe4, text="Scroll Up")
+        self.scrolluplabel.grid(row=0, column=0, padx=10, pady=10)
+
+        # show image
+        scrollupimage = Image.open("Photos/scroll up.jpg").resize((150, 155))
+        scrollupimageTk = ImageTk.PhotoImage(scrollupimage)
+        scrollupimagelabel = Label(self.gestureframe4, image=scrollupimageTk)
+        scrollupimagelabel.grid(row=1, column=0)
+        scrollupimage.image = scrollupimageTk  # keep a reference to the image or something???
+        # something called garbage collection or something???
+
+        # dropdown
+        self.option4 = StringVar()
+        self.option4.set(self.gesturelist[0])
+        self.dropdown4 = OptionMenu(self.gestureframe4, self.option4, *self.gesturelist)
+        self.dropdown4.grid(row=2, column=0)
+        self.gestureframe4.grid(row=0, column=3, padx=10, pady=10)
+
+        # frame 5 ---------------------------------------------------------------
+        self.gestureframe5 = Frame(gesturesettingswindow)
+        self.scrolldownlabel = Label(self.gestureframe5, text="Scroll Down")
+        self.scrolldownlabel.grid(row=0, column=0, padx=10, pady=10)
+
+        # show image
+        scrolldownimage = Image.open("Photos/scroll up.jpg").resize((150, 155))
+        scrolldownimageTk = ImageTk.PhotoImage(scrolldownimage)
+        scrolldownimagelabel = Label(self.gestureframe5, image=scrolldownimageTk)
+        scrolldownimagelabel.grid(row=1, column=0)
+        scrolldownimage.image = scrolldownimageTk  # keep a reference to the image or something???
+        # something called garbage collection or something???
+
+        # dropdown
+        self.option5 = StringVar()
+        self.option5.set(self.gesturelist[1])
+        self.dropdown5 = OptionMenu(self.gestureframe5, self.option5, *self.gesturelist)
+        self.dropdown5.grid(row=2, column=0)
+        self.gestureframe5.grid(row=1, column=0, padx=10, pady=10)
+
+        # back button -----------------------------------------------------------------
+        self.backbutton = Button(gesturesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
+                                 command=lambda: self.Back(gesturesettingswindow))
+        self.backbutton.grid(row=1, column=2)
+
+    def Back(self, window):
+        window.destroy()
 
 
 class MouseSettingsWindow:
@@ -151,14 +222,14 @@ class MouseSettingsWindow:
         self.scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
         # back button
-        self.buttonframe = Frame(mousesettingswindow)
-        self.backbutton = Button(self.buttonframe, text="back", command=lambda: self.back(mousesettingswindow))
-        self.backbutton.pack()
-        self.buttonframe.grid(row=4, column=0)
 
-    def back(self, window):
+        self.backbutton = Button(mousesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
+                                 command=lambda: self.Back(mousesettingswindow))
+        self.backbutton.grid(row=4, column=0)
+
+
+    def Back(self, window):
         window.destroy()
-
 
 
 class InstructionsWindow:
