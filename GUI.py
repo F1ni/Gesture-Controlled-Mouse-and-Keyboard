@@ -41,10 +41,13 @@ class Main:
         gesturesettingsWindow = GestureSettingsWindow()
 
     def OpenMouseSettingsWindow(self):
-        mousesettingsWindow = MouseSettingsWindow()
+        mousesettingsWindow = MouseSettingsWindow(self.UpdateMouseSettings)
 
     def OpenInstructionsWindow(self):
         instructionsWindow = InstructionsWindow()
+
+    def UpdateMouseSettings(self):
+        pass
 
 
 class GestureSettingsWindow:
@@ -172,14 +175,16 @@ class GestureSettingsWindow:
         self.backbutton.grid(row=1, column=2)
 
     def Back(self, window):
+        # submitting data back to main menu screen
         window.destroy()
 
 
 class MouseSettingsWindow:
-    def __init__(self):
+    def __init__(self, updatefunction):
         mousesettingswindow = Toplevel(bg=backgroundcolor)
         mousesettingswindow.geometry("700x500")
         mousesettingswindow.title("Mouse Settings")
+        self.updatemousesettingsfunction = updatefunction
 
         # Title
         self.titleLabel = Label(mousesettingswindow, text="Mouse Settings", font=10, bg=backgroundcolor)
@@ -229,6 +234,8 @@ class MouseSettingsWindow:
 
 
     def Back(self, window):
+        # submitting data back through main menu screen
+        self.updatemousesettingsfunction()
         window.destroy()
 
 

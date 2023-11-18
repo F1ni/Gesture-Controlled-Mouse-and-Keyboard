@@ -233,7 +233,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
                     print(distanceofthumbandindex)
                     # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
-                    if distanceofthumbandindex < 75 and not normalclick:  # if distance is less than a certain number
+                    if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         normalclick = True
                         mouse.click()
@@ -290,6 +290,7 @@ with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, m
                     whichhandgesture = np.argmax(np.squeeze(prediction))
                     print(np.argmax(np.squeeze(prediction)))
 
+                    WhichGesture(whichhandgesture)
                     # if whichhandgesture == 0:
                     #     mouse.wheel(delta=1)
                     # elif whichhandgesture == 1:
