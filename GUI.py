@@ -1,16 +1,19 @@
 from tkinter import *
 from PIL import Image, ImageTk
+import mainv2 as mainscript
+import threading
 
+# threading
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
 buttoncolor = "#636363"
 gesturelist = [
-            "pointer",
-            "drag click",
-            "right click",
-            "scroll up",
-            "scroll down"
-        ]
+    "pointer",
+    "drag click",
+    "right click",
+    "scroll up",
+    "scroll down"
+]
 
 class Main:
     def __init__(self, main):
@@ -23,13 +26,14 @@ class Main:
         self.rightclickoption = 2
         self.scrollupoption = 3
         self.scrolldownoption = 4
-
+        self.thread = None
         buttonframe = Frame(main, bg=backgroundcolor)
 
-        StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor)
+        StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
+                             command=self.Start)
         StartButton.grid(row=0, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
 
-        StopButton = Button(buttonframe, text="Stop", padx=20, pady=10, bg=buttoncolor, fg=textcolor)
+        StopButton = Button(buttonframe, text="Stop", padx=20, pady=10, bg=buttoncolor, fg=textcolor, command=self.Stop)
         StopButton.grid(row=1, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
 
         InstructionsPageButton = Button(buttonframe, text="Instructions", padx=20, pady=10, bg=buttoncolor
@@ -53,8 +57,29 @@ class Main:
         label.grid(row=0, column=0)
         VideoFrame.grid(row=0, column=1)
 
+    def Start(self):
+        # mainscript.isStopped = True
+        # threading.Thread(target=mainscript.MainFunction).join()
+        # threading.Thread(target=self.StartThread).start()
+
+        if self.thread is None or not self.thread.is_alive():
+            mainscript.isStopped = False
+            self.thread = threading.Thread(target=mainscript.MainFunction)
+            self.thread.start()
+
+    # def StartThread(self):
+    #     mainscript.isStopped = False
+    #     mainscript.MainFunction()
+
+    def Stop(self):
+        # mainscript.isStopped = True
+        if self.thread and self.thread.is_alive():
+            mainscript.isStopped = True  # Assuming you have this global flag
+            self.thread.join()
+
     def OpenGestureSettingsWindow(self):
-        gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption, self.dragclickoption,
+        gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption,
+                                                      self.dragclickoption,
                                                       self.rightclickoption, self.scrollupoption, self.scrolldownoption)
 
     def OpenMouseSettingsWindow(self):

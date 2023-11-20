@@ -17,13 +17,10 @@ mp_drawing = mp.solutions.drawing_utils
 wCam, hCam = 640, 480
 frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
 smoothening = 7  # slider for this
-prevLocX, prevLocY = 0, 0
-curLocX, curLoxY = 0, 0
+
 # -----------------------------------------------------------------------------------------------------------------------------------
 
-cap = cv2.VideoCapture(0)
-cap.set(3, wCam)
-cap.set(4, hCam)
+
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 mp_hands = mp.solutions.hands
@@ -33,12 +30,9 @@ screenwidth, screenheight = pyautogui.size()  # get resolution of the users scre
 screencordy = 0
 # -----------------------------------------------------------------------------------------------------------------------------------
 mode = 0
-pTime = 0  # need for frame rate
+isStopped = False
 # -----------------------------------------------------------------------------------------------------------------------------------
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
-dragclick = False
-normalclick = False
-rightclick = False
 
 
 def CalcLandmarkList(image, landmarks):  # algorithm
@@ -166,143 +160,176 @@ def WhichGesture(gesturenumber):
     elif gesturenumber == 1:
         mouse.wheel(delta=-1)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
+# def StopScript():
+#     global isStopped
+#     isStopped = True
 
-with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
-    while cap.isOpened():
-        # break by pressing esc
-        key = cv2.waitKey(10)
-        if key == 27:  # esc key
-            break
+def StartVideoCapture():
+    # global cap
+    # cap = cv2.VideoCapture(0)
+    # cap.set(3, wCam)
+    # cap.set(4, hCam)
+    MainFunction()
 
-        if key == 107:  # k
-            mode = 3
-        elif key == 110:  # n
-            mode = 0
 
-        success, img = cap.read()  # reads the video captured and returns two values
-        if not success:  # if there is no image then break out of the loop
-            break
-        img = cv2.flip(img, 1)  # flips the image
-        # detection by mediapipe
-        img, results = DetectHands(img, hands)
+def MainFunction():
+    dragclick = False
+    normalclick = False
+    rightclick = False
 
-        # draw hand landmarks
-        if results.multi_hand_landmarks:
-            for handLandmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(img, handLandmarks, mp_hands.HAND_CONNECTIONS)
-                landmark_list = CalcLandmarkList(img, handLandmarks)
-                normalisedLandmarkList = normaliseLandmarkList(landmark_list)  # coordinates are in relation to the
+    global mode
+    global fingersuplist
+    global isStopped
 
-                # wrist where the starting of the wrist is the base point
-                # in total there are 21 hand landmarks so the normalised list gives\
-                # you 42 for each x and y value
-                # this list will be used for the neural network
-                # get tip of index and middle finger
-                LoggingHandGestures(normalisedLandmarkList)
-                xindex, yindex = landmark_list[8][0], landmark_list[8][1]
-                xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
+    cap = cv2.VideoCapture(0)
+    cap.set(3, wCam)
+    cap.set(4, hCam)
 
-                whichhand = whichHand(landmark_list)  # checks which hand is showing
-                fingersuplist = fingersUp(landmark_list, whichhand)
-                print(fingersuplist)
+    prevLocX, prevLocY = 0, 0
+    curLocX, curLoxY = 0, 0
+    pTime = 0  # need for frame rate
 
-                # draw on show
-                cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
-                # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
-                if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[4] == 1:  # now will change the mouse
-                    rightclick = False
-                    xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
-                    xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
-                    distanceofthumbandindex = int(
-                        math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
-                    # coordinates to move mouse
-                    # could be a classed as an algorithm
+    with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
 
-                    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
-                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+        while cap.isOpened() and not isStopped:
+            print(isStopped)
+            # break by pressing esc
+            key = cv2.waitKey(10)
+            if key == 27:  # esc key
+                break
 
-                    curLocX = prevLocX + (xpos - prevLocX) / smoothening
-                    curLocY = prevLocY + (ypos - prevLocY) / smoothening
+            if key == 107:  # k
+                mode = 3
+            elif key == 110:  # n
+                mode = 0
 
-                    # move the mouse
-                    mouse.move(xpos, ypos)
-                    # with pyautogui it made fps low so changed to mouse library, , duration=0.001
-                    prevLocX, prevLocY = curLocX, curLocY
-                    # this smoothening worked out much better than the library one
-                    # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
-                    print(distanceofthumbandindex)
-                    # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
-                    if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
+            success, img = cap.read()  # reads the video captured and returns two values
+            if not success:  # if there is no image then break out of the loop
+                break
+            img = cv2.flip(img, 1)  # flips the image
+            # detection by mediapipe
+            img, results = DetectHands(img, hands)
+
+            # draw hand landmarks
+            if results.multi_hand_landmarks:
+                for handLandmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(img, handLandmarks, mp_hands.HAND_CONNECTIONS)
+                    landmark_list = CalcLandmarkList(img, handLandmarks)
+                    normalisedLandmarkList = normaliseLandmarkList(landmark_list)  # coordinates are in relation to the
+
+                    # wrist where the starting of the wrist is the base point
+                    # in total there are 21 hand landmarks so the normalised list gives\
+                    # you 42 for each x and y value
+                    # this list will be used for the neural network
+                    # get tip of index and middle finger
+                    LoggingHandGestures(normalisedLandmarkList)
+                    xindex, yindex = landmark_list[8][0], landmark_list[8][1]
+                    xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
+
+                    whichhand = whichHand(landmark_list)  # checks which hand is showing
+                    fingersuplist = fingersUp(landmark_list, whichhand)
+                    print(fingersuplist)
+
+                    # draw on show
+                    cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
+                    # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
+                    if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
+                        4] == 1:  # now will change the mouse
+                        rightclick = False
+                        xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
+                        xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
+                        distanceofthumbandindex = int(
+                            math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+                        # coordinates to move mouse
+                        # could be a classed as an algorithm
+
+                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
+                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+
+                        curLocX = prevLocX + (xpos - prevLocX) / smoothening
+                        curLocY = prevLocY + (ypos - prevLocY) / smoothening
+
+                        # move the mouse
+                        mouse.move(xpos, ypos)
+                        # with pyautogui it made fps low so changed to mouse library, , duration=0.001
+                        prevLocX, prevLocY = curLocX, curLocY
+                        # this smoothening worked out much better than the library one
+                        # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
+                        print(distanceofthumbandindex)
+                        # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
+                        if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
+                            # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                            normalclick = True
+                            mouse.click()
+                            print("click")
+                            time.sleep(0.5)
+                        else:
+                            normalclick = False
+                        # changed the library and it is much smoother now
+
+                    # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
+                        4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                        normalclick = True
-                        mouse.click()
-                        print("click")
+                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
+                        # franeR, wCam part makes it so that the pink box represents the whole screen
+                        # move the mouse
+                        mouse.move(xpos, ypos,
+                                   duration=0.001)  # with pyautogui it made fps low so changed to mouse library
+                        distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+                        print(distance)
+                        if distance < 20:
+                            dragclick = True  # makes it so that it won't always do the mouse.release function
+                            # changed the libraryand it is much smoother now
+                            mouse.press(button='left')  # holds the mouse down
+                        else:  # so that it does not realease the mouse if the part above never even eran
+                            if dragclick:
+                                mouse.release(button='left')
+                                dragclick = False
+
+
+                    # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
+                    # if index finger is up and middle two fingers are down
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[
+                        3] == 1 and not rightclick:
+                        rightclick = True
+                        mouse.right_click()
                         time.sleep(0.5)
+
+                    # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
+                    # gestures like scrolling only available in mouse and keyboard mode
+                    # to make sure they didn't accidentally do a gesture then put the recursive function code in on disc
                     else:
-                        normalclick = False
-                    # changed the library and it is much smoother now
+                        # print(np.array(normalisedLandmarkList).shape)
+                        # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging
+                        normalisedLandmarkList = np.array(normalisedLandmarkList,
+                                                          dtype=np.float32)  # the normalised data at first was of type float64, however the
+                        # model will only take in data of type float 32, so had to convert it
+                        normalisedLandmarkList = normalisedLandmarkList.reshape(1,
+                                                                                -1)  # -1  is used when you dont know or want
+                        # to explicitly tell the dimension of that axis
+                        prediction = model.predict(normalisedLandmarkList)
+                        print("prediction: ")
+                        whichhandgesture = np.argmax(np.squeeze(prediction))
+                        print(np.argmax(np.squeeze(prediction)))
 
-                # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
-                    4] == 1:
-                    # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
-                    # franeR, wCam part makes it so that the pink box represents the whole screen
-                    # move the mouse
-                    mouse.move(xpos, ypos, duration=0.001)  # with pyautogui it made fps low so changed to mouse library
-                    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
-                    print(distance)
-                    if distance < 20:
-                        dragclick = True  # makes it so that it won't always do the mouse.release function
-                        # changed the libraryand it is much smoother now
-                        mouse.press(button='left')  # holds the mouse down
-                    else:  # so that it does not realease the mouse if the part above never even eran
-                        if dragclick:
-                            mouse.release(button='left')
-                            dragclick = False
+                        WhichGesture(whichhandgesture)
 
 
-                # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
-                # if index finger is up and middle two fingers are down
-                elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[
-                    3] == 1 and not rightclick:
-                    rightclick = True
-                    mouse.right_click()
-                    time.sleep(0.5)
+            # frame rate
+            cTime = time.time()
+            fps = 1 / (cTime - pTime)  # float so make into an int
+            pTime = cTime
+            cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+            # show image
+            cv2.imshow("Gesture Recog", img)
 
-                # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                # gestures like scrolling only available in mouse and keyboard mode
-                # to make sure they didn't accidentally do a gesture then put the recursive function code in on disc
-                else:
-                    # print(np.array(normalisedLandmarkList).shape)
-                    # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging
-                    normalisedLandmarkList = np.array(normalisedLandmarkList,
-                                                      dtype=np.float32)  # the normalised data at first was of type float64, however the
-                    # model will only take in data of type float 32, so had to convert it
-                    normalisedLandmarkList = normalisedLandmarkList.reshape(1,
-                                                                            -1)  # -1  is used when you dont know or want
-                    # to explicitly tell the dimension of that axis
-                    prediction = model.predict(normalisedLandmarkList)
-                    print("prediction: ")
-                    whichhandgesture = np.argmax(np.squeeze(prediction))
-                    print(np.argmax(np.squeeze(prediction)))
+    cap.release()
+    cv2.destroyAllWindows()
 
-                    WhichGesture(whichhandgesture)
-                    # if whichhandgesture == 0:
-                    #     mouse.wheel(delta=1)
-                    # elif whichhandgesture == 1:
-                    #     mouse.wheel(delta=-1)
-
-        # frame rate
-        cTime = time.time()
-        fps = 1 / (cTime - pTime)  # float so make into an int
-        pTime = cTime
-        cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
-        # show image
-        cv2.imshow("Gesture Recog", img)
-
-cap.release()
-cv2.destroyAllWindows()
+# to destroy the window with stop button we do cap.release so we would need to create a new instance of cap again to be able to recall it
+# which is why it was not working in the frist place
+# find a way to stop showing the video wihtout having to release cap
