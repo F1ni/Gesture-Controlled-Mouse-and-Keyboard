@@ -1,6 +1,6 @@
 from tkinter import *
 from PIL import Image, ImageTk
-import mainv2 as mainscript
+# import mainv2 as mainscript
 import threading
 
 # threading
@@ -14,6 +14,7 @@ gesturelist = [
     "scroll up",
     "scroll down"
 ]
+
 
 class Main:
     def __init__(self, main):
@@ -53,29 +54,28 @@ class Main:
 
         # video frame
         VideoFrame = Frame(main)
-        label = Label(VideoFrame, text="Video shown here", padx=10, pady=10)
-        label.grid(row=0, column=0)
+        self.label = Label(VideoFrame, text="Video shown here", padx=10, pady=10)
+        self.label.grid(row=0, column=0)
         VideoFrame.grid(row=0, column=1)
 
-    def Start(self):
-        # mainscript.isStopped = True
-        # threading.Thread(target=mainscript.MainFunction).join()
-        # threading.Thread(target=self.StartThread).start()
-
-        if self.thread is None or not self.thread.is_alive():
-            mainscript.isStopped = False
-            self.thread = threading.Thread(target=mainscript.MainFunction)
-            self.thread.start()
-
-    # def StartThread(self):
-    #     mainscript.isStopped = False
-    #     mainscript.MainFunction()
-
-    def Stop(self):
-        # mainscript.isStopped = True
-        if self.thread and self.thread.is_alive():
-            mainscript.isStopped = True  # Assuming you have this global flag
-            self.thread.join()
+    # def UpdateVideoLabel(self, image):
+    #     img = Image.fromarray(image)
+    #     img = ImageTk.PhotoImage(image=img)
+    #     self.label.img = img
+    #
+    #     self.label.config(image=img)
+# ----------------------------------------------------------
+    # def Start(self):
+    #     if self.thread is None or not self.thread.is_alive():
+    #         mainscript.isStopped = False
+    #         self.thread = threading.Thread(target=mainscript.MainFunction)
+    #         self.thread.start()
+    #
+    # def Stop(self):
+    #     # mainscript.isStopped = True
+    #     if self.thread and self.thread.is_alive():
+    #         mainscript.isStopped = True  # Assuming you have this global flag
+    #         self.thread.join()
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption,
