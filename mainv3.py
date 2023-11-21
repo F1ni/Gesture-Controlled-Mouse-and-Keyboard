@@ -9,6 +9,7 @@ import pyautogui
 import time
 import tensorflow as tf
 import csv
+# gui libraries -------------------------------------------------------
 from tkinter import *
 from PIL import Image, ImageTk
 import threading
@@ -210,15 +211,16 @@ def MainFunction():
             img = cv2.flip(img, 1)  # flips the image
             # detection by mediapipe
             img, results = DetectHands(img, hands)
+            cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+
+            MainWindow.UpdateVideoLabel(cv2image)
 
             # draw hand landmarks
             if results.multi_hand_landmarks:
                 for handLandmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(img, handLandmarks, mp_hands.HAND_CONNECTIONS)
                     # show image here
-                    # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-                    # gui.Main.UpdateVideoLabel(cv2image)
                     landmark_list = CalcLandmarkList(img, handLandmarks)
                     normalisedLandmarkList = normaliseLandmarkList(landmark_list)  # coordinates are in relation to the
 
@@ -323,6 +325,10 @@ def MainFunction():
 
                         WhichGesture(whichhandgesture)
 
+                    cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+
+                    MainWindow.UpdateVideoLabel(cv2image)
+
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
@@ -382,12 +388,13 @@ class Main:
         self.label.grid(row=0, column=0)
         VideoFrame.grid(row=0, column=1)
 
-    # def UpdateVideoLabel(self, image):
-    #     img = Image.fromarray(image)
-    #     img = ImageTk.PhotoImage(image=img)
-    #     self.label.img = img
-    #
-    #     self.label.config(image=img)
+    def UpdateVideoLabel(self, image):
+        img = Image.fromarray(image)
+        img = ImageTk.PhotoImage(image=img)
+        self.label.img = img
+
+        self.label.config(image=img)
+
     # ----------------------------------------------------------
     def Start(self):
         global isStopped
@@ -398,9 +405,10 @@ class Main:
 
     def Stop(self):
         global isStopped
-        # mainscript.isStopped = True
+
         if self.thread and self.thread.is_alive():
-            isStopped = True  # Assuming you have this global flag
+            self.label.config(text="video shown here")
+            isStopped = True
             self.thread.join()
 
     def OpenGestureSettingsWindow(self):
