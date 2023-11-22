@@ -176,7 +176,7 @@ def WhichGesture(gesturenumber):
         mouse.wheel(delta=-1)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
 
-def MainFunction():
+def MainFunction(mousesens, mousesmooth, scrollspeed):
     dragclick = False
     normalclick = False
     rightclick = False
@@ -211,9 +211,9 @@ def MainFunction():
             img = cv2.flip(img, 1)  # flips the image
             # detection by mediapipe
             img, results = DetectHands(img, hands)
-            cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+            # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-            MainWindow.UpdateVideoLabel(cv2image)
+            # MainWindow.UpdateVideoLabel(cv2image)
 
             # draw hand landmarks
             if results.multi_hand_landmarks:
@@ -254,11 +254,11 @@ def MainFunction():
                         xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
                         ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
-                        curLocX = prevLocX + (xpos - prevLocX) / smoothening
-                        curLocY = prevLocY + (ypos - prevLocY) / smoothening
+                        curLocX = prevLocX + (xpos - prevLocX) / mousesmooth
+                        curLocY = prevLocY + (ypos - prevLocY) / mousesmooth
 
                         # move the mouse
-                        mouse.move(xpos, ypos)
+                        mouse.move(curLocX, curLocY)
                         # with pyautogui it made fps low so changed to mouse library, , duration=0.001
                         prevLocX, prevLocY = curLocX, curLocY
                         # this smoothening worked out much better than the library one
@@ -282,13 +282,17 @@ def MainFunction():
                         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
                         xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
                         ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
+
+                        curLocX = prevLocX + (xpos - prevLocX) / mousesmooth
+                        curLocY = prevLocY + (ypos - prevLocY) / mousesmooth
                         # franeR, wCam part makes it so that the pink box represents the whole screen
                         # move the mouse
-                        mouse.move(xpos, ypos,
-                                   duration=0.001)  # with pyautogui it made fps low so changed to mouse library
+                        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
+
+                        prevLocX, prevLocY = curLocX, curLocY
                         distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
                         print(distance)
-                        if distance < 20:
+                        if distance < 35:
                             dragclick = True  # makes it so that it won't always do the mouse.release function
                             # changed the libraryand it is much smoother now
                             mouse.press(button='left')  # holds the mouse down
@@ -325,9 +329,9 @@ def MainFunction():
 
                         WhichGesture(whichhandgesture)
 
-                    cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+                    # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-                    MainWindow.UpdateVideoLabel(cv2image)
+                    # MainWindow.UpdateVideoLabel(cv2image)
 
             # frame rate
             cTime = time.time()
@@ -358,6 +362,7 @@ class Main:
         self.scrollupoption = 3
         self.scrolldownoption = 4
         self.thread = None
+        self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
 
         StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
@@ -388,28 +393,34 @@ class Main:
         self.label.grid(row=0, column=0)
         VideoFrame.grid(row=0, column=1)
 
-    def UpdateVideoLabel(self, image):
-        img = Image.fromarray(image)
-        img = ImageTk.PhotoImage(image=img)
-        self.label.img = img
-
-        self.label.config(image=img)
+    # def UpdateVideoLabel(self, image):
+    #     img = Image.fromarray(image)
+    #     img = ImageTk.PhotoImage(image=img)
+    #     self.label.img = img
+    #
+    #     self.label.config(image=img)
 
     # ----------------------------------------------------------
     def Start(self):
         global isStopped
         if self.thread is None or not self.thread.is_alive():
             isStopped = False
-            self.thread = threading.Thread(target=MainFunction)
+            self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
+                                                                       , self.scrollinginput))
             self.thread.start()
 
     def Stop(self):
         global isStopped
 
         if self.thread and self.thread.is_alive():
-            self.label.config(text="video shown here")
             isStopped = True
             self.thread.join()
+            # self.thread2 = threading.Thread(target=self.UpdateLabel)
+            # self.thread2.start()
+
+    def UpdateLabel(self):
+        self.label.config(text="video shown here")
+        self.thread2.join()
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption,
@@ -538,7 +549,7 @@ class GestureSettingsWindow:
         scrolldownlabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
-        scrolldownimage = Image.open("Photos/scroll up.jpg").resize((150, 155))
+        scrolldownimage = Image.open("Photos/scrolldown.jpg").resize((150, 155))
         scrolldownimageTk = ImageTk.PhotoImage(scrolldownimage)
         scrolldownimagelabel = Label(gestureframe5, image=scrolldownimageTk)
         scrolldownimagelabel.grid(row=1, column=0)
@@ -550,7 +561,7 @@ class GestureSettingsWindow:
         self.option5.set(gesturelist[scrolldownoption])
         dropdown5 = OptionMenu(gestureframe5, self.option5, *gesturelist)
         dropdown5.grid(row=2, column=0)
-        gestureframe5.grid(row=1, column=0, padx=10, pady=10)
+        gestureframe5.grid(row=1, column=0, padx=5, pady=5)
 
         # back button -----------------------------------------------------------------
         backbutton = Button(gesturesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
