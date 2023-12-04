@@ -276,8 +276,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                         # changed the library and it is much smoother now
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
-                        4] == 1:
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
                         xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
