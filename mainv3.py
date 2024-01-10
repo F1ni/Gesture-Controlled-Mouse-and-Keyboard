@@ -273,6 +273,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                         else:
                             normalclick = False
                         # changed the library and it is much smoother now
+                        # DONE THIS ONE NOW
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
