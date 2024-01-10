@@ -64,8 +64,7 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(
-        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'

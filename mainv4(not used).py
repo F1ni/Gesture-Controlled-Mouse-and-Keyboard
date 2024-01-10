@@ -23,8 +23,7 @@ frameR = 150  # reduce the fram so that you don't have to go right to the bottom
 smoothening = 7  # slider for this
 
 # -----------------------------------------------------------------------------------------------------------------------------------
-prevLocX, prevLocY = 0, 0
-curLocX, curLocY = 0, 0
+
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 mp_hands = mp.solutions.hands
@@ -65,7 +64,8 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(
+        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
@@ -173,25 +173,78 @@ def WhichGesture(gesturenumber, scrollspeed):
     if gesturenumber == 0:
         mouse.wheel(delta=1 * scrollspeed)
     elif gesturenumber == 1:
-        mouse.wheel(delta=-1 * scrollspeed)  # when doing key algorithm for this include the rest of the psuedocode that will be there
+        mouse.wheel(
+            delta=-1 * scrollspeed)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
 
-def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth):
-    xindex, yindex = landmark_list[8][0], landmark_list[8][1]
-    xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
+def HandMoveWithLeftClick(img, landmark_list, xindex, yindex, prevLocX, prevLocY, mousesmooth, mousesens,
+                          normalclick):
+    rightclick = False
     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
     distanceofthumbandindex = int(
         math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+    # coordinates to move mouse
+    # could be a classed as an algorithm
+
+    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
 
+    # move the mouse
+    mouse.move(curLocX, curLocY)
+    # with pyautogui it made fps low so changed to mouse library, , duration=0.001
+    prevLocX, prevLocY = curLocX, curLocY
+    # this smoothening worked out much better than the library one
+    # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
+    print(distanceofthumbandindex)
+    # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
+    if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
+        # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+        normalclick = True
+        mouse.click()
+        print("click")
+        time.sleep(0.5)
+    else:
+        normalclick = False
+    # changed the library and it is much smoother now
 
 
-def MainFunction(mousesens, mousesmooth, scrollspeed):
+def DragClick(img, xmiddle, ymiddle, xindex, yindex, prevLocX, prevLocY, mousesmooth, mousesens,
+                          dragclick):
+    # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+    cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+    xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
+    ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
+
+    curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
+    curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
+    # franeR, wCam part makes it so that the pink box represents the whole screen
+    # move the mouse
+    mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
+
+    prevLocX, prevLocY = curLocX, curLocY
+    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+    print(distance)
+    if distance < 35:
+        dragclick = True  # makes it so that it won't always do the mouse.release function
+        # changed the library and it is much smoother now
+        mouse.press(button='left')  # holds the mouse down
+    else:  # so that it does not realease the mouse if the part above never even eran
+        if dragclick:
+            mouse.release(button='left')
+            dragclick = False
+
+def RightClick(rightclick):
+    rightclick = True
+    mouse.right_click()
+    time.sleep(0.5)
+
+def MainFunction(mousesens, mousesmooth, scrollspeed, leftclickoption, dragclickoption,
+                 rightclickoption, scrollup, scrolldown):
     dragclick = False
     normalclick = False
     rightclick = False
@@ -257,63 +310,19 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1:  # now will change the mouse
-                        rightclick = False
-                        xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
-                        xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
-                        distanceofthumbandindex = int(
-                            math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
-                        # coordinates to move mouse
-                        # could be a classed as an algorithm
 
-                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
-                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+                        if leftclickoption == 0:
+                            HandMoveWithLeftClick(img, landmark_list, xindex, yindex,
+                                                  prevLocX, prevLocY, mousesmooth, mousesens,
+                                                  normalclick)
+                        elif leftclickoption == 1:
+                            DragClick(img, xmiddle, ymiddle, xindex, yindex, prevLocX, prevLocY, mousesmooth, mousesens, dragclick)
 
-                        curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
-                        curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-
-                        # move the mouse
-                        mouse.move(curLocX, curLocY)
-                        # with pyautogui it made fps low so changed to mouse library, , duration=0.001
-                        prevLocX, prevLocY = curLocX, curLocY
-                        # this smoothening worked out much better than the library one
-                        # finds distance between the thumb and the index finger so to check if drag click should be enabled or not
-                        print(distanceofthumbandindex)
-                        # LEFT CLICK ----------------------------------------------------------------------------------------------------------------
-                        if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
-                            # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                            normalclick = True
-                            mouse.click()
-                            print("click")
-                            time.sleep(0.5)
-                        else:
-                            normalclick = False
-                        # changed the library and it is much smoother now
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
-                        # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
-
-                        curLocX = prevLocX + (xpos - prevLocX) / mousesmooth
-                        curLocY = prevLocY + (ypos - prevLocY) / mousesmooth
-                        # franeR, wCam part makes it so that the pink box represents the whole screen
-                        # move the mouse
-                        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
-
-                        prevLocX, prevLocY = curLocX, curLocY
-                        distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
-                        print(distance)
-                        if distance < 35:
-                            dragclick = True  # makes it so that it won't always do the mouse.release function
-                            # changed the libraryand it is much smoother now
-                            mouse.press(button='left')  # holds the mouse down
-                        else:  # so that it does not realease the mouse if the part above never even eran
-                            if dragclick:
-                                mouse.release(button='left')
-                                dragclick = False
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
+                        4] == 1:
+                        pass
 
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
@@ -420,7 +429,9 @@ class Main:
         if self.thread is None or not self.thread.is_alive():
             isStopped = False
             self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
-                                                                       , self.scrollinginput))
+                                                                       , self.scrollinginput, self.pointeroption,
+                                                                       self.dragclickoption, self.rightclickoption,
+                                                                       self.scrollupoption, self.scrolldownoption))
             self.thread.start()
 
     def Stop(self):
