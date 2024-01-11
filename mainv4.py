@@ -75,7 +75,7 @@ def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv f
         openedfile = open(gesturespath, 'a', newline='')  # opens the path of the gestures folder and makes it writeable
         # makes it so that no new line is created
         writer = csv.writer(openedfile)  # opened using csv writer
-        writer.writerow([4, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
+        writer.writerow([5, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
         # screenshot of this not working on discord server
         # it still kept overwriting the data so this did not work
         # instead of writing it should be a which means appending
@@ -178,8 +178,13 @@ def WhichGesture(gesturenumber, scrollspeed):
     elif gesturenumber == 1:
         mouse.wheel(delta=-1 * scrollspeed)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
+def Click(status, normalclick, dragclick):
+    if status == "pointer":
+        pass
+        
 
-def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img):
+
+def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture):
     global prevLocX
     global prevLocY
     global curLocY
@@ -194,7 +199,9 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img):
 
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
-
+    distanceofthumbandindex = int(
+        math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
 
@@ -203,17 +210,51 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img):
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)
         prevLocX, prevLocY = curLocX, curLocY
-        distanceofthumbandindex = int(
-            math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
-        if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
-            # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-            normalclick = True
-            mouse.click()
-            print("click")
-            time.sleep(0.5)
-        else:
-            normalclick = False
+        print("nameoffunction: 0 " + str(distance))
+        if statusgesture == "pointer":
+            if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
+                # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                normalclick = True
+                mouse.click()
+                print("click")
+                time.sleep(0.2)
+            else:
+                normalclick = False
+        elif statusgesture == "indexandmiddle":
+            if distance < 35 and not normalclick:
+                normalclick = True  # makes it so that it won't always do the mouse.release function
+                # changed the libraryand it is much smoother now
+                mouse.click()  # holds the mouse down
+                time.sleep(0.2)
+            else:  # so that it does not realease the mouse if the part above never even eran
+                normalclick = False
 
+    elif nameoffunction == 1: # drag clicking
+        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
+        prevLocX, prevLocY = curLocX, curLocY
+
+        print(distance)
+        if statusgesture == "pointer":
+            if distanceofthumbandindex < 40:  # if distance is less than a certain number
+                # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                dragclick = True
+                mouse.press(button='left')
+                print("click")
+
+            else:
+                if normalclick:
+                    mouse.release(button='left')
+                    dragclick = False
+        elif statusgesture == "indexandmiddle":
+            if distance < 35:
+                dragclick = True  # makes it so that it won't always do the mouse.release function
+                # changed the libraryand it is much smoother now
+                mouse.press(button='left')  # holds the mouse down
+            else:  # so that it does not realease the mouse if the part above never even eran
+                if dragclick:
+                    mouse.release(button='left')
+                    dragclick = False
 
 def MainFunction(mousesens, mousesmooth, scrollspeed):
     global mode
@@ -275,34 +316,13 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1:  # now will change the mouse
-                        WhatFunction(0, landmark_list, mousesens, mousesmooth, img)
+                        WhatFunction(0, landmark_list, mousesens, mousesmooth, img, "pointer")
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                        cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-                        xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))  # what does np.interp do
-                        ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))  # interpolation
-
-                        curLocX = prevLocX + (xpos - prevLocX) / mousesmooth
-                        curLocY = prevLocY + (ypos - prevLocY) / mousesmooth
-                        # franeR, wCam part makes it so that the pink box represents the whole screen
-                        # move the mouse
-                        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
-
-                        prevLocX, prevLocY = curLocX, curLocY
-                        distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
-                        print(distance)
-                        if distance < 35:
-                            dragclick = True  # makes it so that it won't always do the mouse.release function
-                            # changed the libraryand it is much smoother now
-                            mouse.press(button='left')  # holds the mouse down
-                        else:  # so that it does not realease the mouse if the part above never even eran
-                            if dragclick:
-                                mouse.release(button='left')
-                                dragclick = False
-
+                        WhatFunction(1, landmark_list, mousesens, mousesmooth, img, "indexandmiddle")
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -329,11 +349,15 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                         whichhandgesture = np.argmax(np.squeeze(prediction))
                         print(np.argmax(np.squeeze(prediction)))
 
-                        WhichGesture(whichhandgesture, scrollspeed)
+                        if whichhandgesture == 5:
+                            cap.release()
+
+                        else:
+                            WhichGesture(whichhandgesture, scrollspeed)
 
                     # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-                    # MainWindow.UpdateVideoLabel(cv2image)
+
 
             # frame rate
             cTime = time.time()
