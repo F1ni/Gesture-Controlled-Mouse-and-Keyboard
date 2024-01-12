@@ -52,6 +52,14 @@ gesturelist = [
     "scroll up",
     "scroll down"
 ]
+gesturelistforclicking = [
+    "pointer",
+    "drag click"
+]
+gesturelistforscrolling = [
+    "scroll up",
+    "scroll down"
+]
 
 
 def CalcLandmarkList(image, landmarks):  # algorithm
@@ -205,7 +213,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
 
-    if nameoffunction == 0:
+    if nameoffunction == "pointer":
         rightclick = False
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)
@@ -220,7 +228,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                 time.sleep(0.2)
             else:
                 normalclick = False
-        elif statusgesture == "indexandmiddle":
+        elif statusgesture == "drag click":
             if distance < 35 and not normalclick:
                 normalclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
@@ -256,7 +264,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     mouse.release(button='left')
                     dragclick = False
 
-def MainFunction(mousesens, mousesmooth, scrollspeed):
+def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption, pointdownoption):
     global mode
     global fingersuplist
     global isStopped
@@ -287,8 +295,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
             img, results = DetectHands(img, hands)
             # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-            # MainWindow.UpdateVideoLabel(cv2image)
-
             # draw hand landmarks
             if results.multi_hand_landmarks:
                 for handLandmarks in results.multi_hand_landmarks:
@@ -311,18 +317,19 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                     fingersuplist = fingersUp(landmark_list, whichhand)
                     print(fingersuplist)
 
+                    print(pointergestureoption, indexandmiddleoption)
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1:  # now will change the mouse
-                        WhatFunction(0, landmark_list, mousesens, mousesmooth, img, "pointer")
+                        WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer")
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                        WhatFunction(1, landmark_list, mousesens, mousesmooth, img, "indexandmiddle")
+                        WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle")
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -345,13 +352,12 @@ def MainFunction(mousesens, mousesmooth, scrollspeed):
                                                                                 -1)  # -1  is used when you dont know or want
                         # to explicitly tell the dimension of that axis
                         prediction = model.predict(normalisedLandmarkList)
-                        print("prediction: ")
+                        # print("prediction: ")
                         whichhandgesture = np.argmax(np.squeeze(prediction))
-                        print(np.argmax(np.squeeze(prediction)))
-
+                        # print(np.argmax(np.squeeze(prediction)))
+                        print(pointupoption, pointdownoption)
                         if whichhandgesture == 5:
                             cap.release()
-
                         else:
                             WhichGesture(whichhandgesture, scrollspeed)
 
@@ -382,11 +388,11 @@ class Main:
         self.sensitivtyinput = 1
         self.smoothnessinput = 4
         self.scrollinginput = 4
-        self.pointeroption = 0
-        self.dragclickoption = 1
-        self.rightclickoption = 2
-        self.scrollupoption = 3
-        self.scrolldownoption = 4
+        self.pointeroption = "pointer"
+        self.dragclickoption = "drag click"
+
+        self.scrollupoption = "scroll up"
+        self.scrolldownoption = "scroll down"
         self.thread = None
         self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
@@ -432,7 +438,8 @@ class Main:
         if self.thread is None or not self.thread.is_alive():
             isStopped = False
             self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
-                                                                       , self.scrollinginput))
+                                                                       , self.scrollinginput, self.pointeroption, self.dragclickoption
+                                                                       , self.scrollupoption, self.scrolldownoption))
             self.thread.start()
 
     def Stop(self):
@@ -450,8 +457,7 @@ class Main:
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption,
-                                                      self.dragclickoption,
-                                                      self.rightclickoption, self.scrollupoption, self.scrolldownoption)
+                                                      self.dragclickoption, self.scrollupoption, self.scrolldownoption)
 
     def OpenMouseSettingsWindow(self):
         mousesettingsWindow = MouseSettingsWindow(self.UpdateMouseSettings, self.sensitivtyinput, self.smoothnessinput,
@@ -465,21 +471,17 @@ class Main:
         self.smoothnessinput = smoothnessinput
         self.scrollinginput = scrollinginput
 
-    def UpdateGestureSettings(self, option1, option2, option3, option4, option5):
-        self.pointeroption = self.returnindex(option1)
-        self.dragclickoption = self.returnindex(option2)
-        self.rightclickoption = self.returnindex(option3)
-        self.scrollupoption = self.returnindex(option4)
-        self.scrolldownoption = self.returnindex(option5)
-        print(option1, option2, option3, option4, option5)
-        print(self.pointeroption, self.dragclickoption, self.rightclickoption, self.scrollupoption)
-
-    def returnindex(self, option):
-        return gesturelist.index(option)
+    def UpdateGestureSettings(self, option1, option2, option4, option5):
+        self.pointeroption = option1
+        self.dragclickoption = option2
+        self.scrollupoption = option4
+        self.scrolldownoption = option5
+        print(option1, option2, option4, option5)
+        print(self.pointeroption, self.dragclickoption, self.scrollupoption, self.scrolldownoption)
 
 
 class GestureSettingsWindow:
-    def __init__(self, function, pointeroption, dragclickoption, rightclickoption, scrollupoption, scrolldownoption):
+    def __init__(self, function, pointeroption, dragclickoption, scrollupoption, scrolldownoption):
         global pointerimage
         global dragclickimage
         global rightclickimage
@@ -504,8 +506,8 @@ class GestureSettingsWindow:
 
         # dropdown
         self.option1 = StringVar()
-        self.option1.set(gesturelist[pointeroption])
-        dropdown1 = OptionMenu(gestureframe1, self.option1, *gesturelist)
+        self.option1.set(gesturelistforclicking[self.returnindex(gesturelistforclicking, pointeroption)])
+        dropdown1 = OptionMenu(gestureframe1, self.option1, *gesturelistforclicking)
         dropdown1.grid(row=2, column=0)
         gestureframe1.grid(row=0, column=0, padx=10, pady=10)
 
@@ -524,8 +526,8 @@ class GestureSettingsWindow:
 
         # dropdown
         self.option2 = StringVar()
-        self.option2.set(gesturelist[dragclickoption])
-        dropdown2 = OptionMenu(gestureframe2, self.option2, *gesturelist)
+        self.option2.set(gesturelistforclicking[self.returnindex(gesturelistforclicking, dragclickoption)])
+        dropdown2 = OptionMenu(gestureframe2, self.option2, *gesturelistforclicking)
         dropdown2.grid(row=2, column=0)
         gestureframe2.grid(row=0, column=1, padx=10, pady=10)
 
@@ -542,10 +544,10 @@ class GestureSettingsWindow:
         rightclickimage.image = rightclickimageTk  # keep a reference to the image or something???
         # something called garbage collection or something???
 
-        # dropdown
+        # # dropdown
         self.option3 = StringVar()
-        self.option3.set(gesturelist[rightclickoption])
-        dropdown3 = OptionMenu(gestureframe3, self.option3, *gesturelist)
+        self.option3.set("Right Click")
+        dropdown3 = OptionMenu(gestureframe3, self.option3, "Right Click")
         dropdown3.grid(row=2, column=0)
         gestureframe3.grid(row=0, column=2, padx=10, pady=10)
 
@@ -564,8 +566,8 @@ class GestureSettingsWindow:
 
         # dropdown
         self.option4 = StringVar()
-        self.option4.set(gesturelist[scrollupoption])
-        dropdown4 = OptionMenu(gestureframe4, self.option4, *gesturelist)
+        self.option4.set(gesturelistforscrolling[self.returnindex(gesturelistforscrolling, scrollupoption)])
+        dropdown4 = OptionMenu(gestureframe4, self.option4, *gesturelistforscrolling)
         dropdown4.grid(row=2, column=0)
         gestureframe4.grid(row=0, column=3, padx=10, pady=10)
 
@@ -584,8 +586,8 @@ class GestureSettingsWindow:
 
         # dropdown
         self.option5 = StringVar()
-        self.option5.set(gesturelist[scrolldownoption])
-        dropdown5 = OptionMenu(gestureframe5, self.option5, *gesturelist)
+        self.option5.set(gesturelistforscrolling[self.returnindex(gesturelistforscrolling, scrolldownoption)])
+        dropdown5 = OptionMenu(gestureframe5, self.option5, *gesturelistforscrolling)
         dropdown5.grid(row=2, column=0)
         gestureframe5.grid(row=1, column=0, padx=5, pady=5)
 
@@ -596,10 +598,14 @@ class GestureSettingsWindow:
 
     def Back(self, window):
         # submitting data back to main menu screen
-        self.updategesturessettings(self.option1.get(), self.option2.get(), self.option3.get(), self.option4.get(),
+        # print(self.option1.get(), self.option2.get(), self.option3.get(), self.option4.get(),
+        #                             self.option5.get())
+        self.updategesturessettings(self.option1.get(), self.option2.get(), self.option4.get(),
                                     self.option5.get())
         window.destroy()
 
+    def returnindex(self, list, word):
+        return list.index(word)
 
 class MouseSettingsWindow:
     def __init__(self, updatefunction, sensitivtyvalue, smoothnessvalue, scrollingvalue):
