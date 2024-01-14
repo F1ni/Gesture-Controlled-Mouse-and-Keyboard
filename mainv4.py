@@ -186,11 +186,6 @@ def WhichGesture(gesturenumber, scrollspeed):
     elif gesturenumber == 1:
         mouse.wheel(delta=-1 * scrollspeed)  # when doing key algorithm for this include the rest of the psuedocode that will be there
 
-def Click(status, normalclick, dragclick):
-    if status == "pointer":
-        pass
-        
-
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture):
     global prevLocX
@@ -218,7 +213,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)
         prevLocX, prevLocY = curLocX, curLocY
-        print("nameoffunction: 0 " + str(distance))
+
         if statusgesture == "pointer":
             if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
@@ -237,7 +232,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
             else:  # so that it does not realease the mouse if the part above never even eran
                 normalclick = False
 
-    elif nameoffunction == 1: # drag clicking
+    elif nameoffunction == "drag click": # drag clicking
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
         prevLocX, prevLocY = curLocX, curLocY
@@ -317,7 +312,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     fingersuplist = fingersUp(landmark_list, whichhand)
                     print(fingersuplist)
 
-                    print(pointergestureoption, indexandmiddleoption)
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
