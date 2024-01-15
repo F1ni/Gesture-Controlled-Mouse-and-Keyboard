@@ -21,9 +21,13 @@ X_train, X_test, y_train, y_test = train_test_split(X_dataset, y_dataset, train_
 model = Sequential([
     Input(shape=(21 * 2, )),
     Dropout(0.2),
-    Dense(20, activation='relu'),
-    Dropout(0.4),
-    Dense(12, activation='relu'),
+    Dense(14, activation='relu'),
+    Dropout(0.2),
+    Dense(6, activation='relu'),
+    Dropout(0.2),
+    # Dense(20, activation='relu'),
+    # Dropout(0.4),
+    Dense(7, activation='relu'),
     Dense(numberofgestures, activation='softmax')
 ])
 

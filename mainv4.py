@@ -6,6 +6,7 @@ import mouse
 import math
 import numpy as np
 import pyautogui
+import json
 import time
 import tensorflow as tf
 import csv
@@ -45,13 +46,15 @@ fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thu
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
 buttoncolor = "#636363"
-gesturelist = [
+settingslist = [
     "pointer",
     "drag click",
-    "right click",
     "scroll up",
-    "scroll down"
-]
+    "scroll down",
+    "sensitivity",
+    "smoothness",
+    "scrollingspeed"
+] # might not be needed
 gesturelistforclicking = [
     "pointer",
     "drag click"
@@ -60,6 +63,12 @@ gesturelistforscrolling = [
     "scroll up",
     "scroll down"
 ]
+
+# dictionary
+config = {"sensitivity": 1, "smoothness": 4,
+                  "scrollingspeed": 4, "pointer": "pointer",
+                  "drag click": "drag click", "scroll up": "scroll up",
+                  "scroll down": "scroll down"}
 
 
 def CalcLandmarkList(image, landmarks):  # algorithm
@@ -246,7 +255,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                 print("click")
 
             else:
-                if normalclick:
+                if dragclick:
                     mouse.release(button='left')
                     dragclick = False
         elif statusgesture == "indexandmiddle":
@@ -263,7 +272,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global mode
     global fingersuplist
     global isStopped
-
+    global rightclick
+    middlefingerup = False
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
     cap.set(4, hCam)
@@ -317,12 +327,14 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1:  # now will change the mouse
+                        middlefingerup = False
                         WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer")
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                        middlefingerup = False
                         WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle")
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
@@ -331,7 +343,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         3] == 1 and not rightclick:
                         rightclick = True
                         mouse.right_click()
-                        time.sleep(0.5)
+                        time.sleep(0.3)
 
                     # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
                     # gestures like scrolling only available in mouse and keyboard mode
@@ -348,11 +360,16 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         prediction = model.predict(normalisedLandmarkList)
                         # print("prediction: ")
                         whichhandgesture = np.argmax(np.squeeze(prediction))
-                        # print(np.argmax(np.squeeze(prediction)))
-                        print(pointupoption, pointdownoption)
+                        print(np.argmax(np.squeeze(prediction)))
+
                         if whichhandgesture == 5:
-                            cap.release()
+                            if not middlefingerup:
+                                middlefingerup = True
+                                pyautogui.hotkey("alt", "f4")
+
+                            # cap.release()
                         else:
+                            middlefingerup = False
                             WhichGesture(whichhandgesture, scrollspeed)
 
                     # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
@@ -378,15 +395,16 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 # ---------------- GUI ---------------------------------
 class Main:
     def __init__(self, main):
+        with open('settings.json', 'r') as f:
+            config = json.load(f)
 
-        self.sensitivtyinput = 1
-        self.smoothnessinput = 4
-        self.scrollinginput = 4
-        self.pointeroption = "pointer"
-        self.dragclickoption = "drag click"
-
-        self.scrollupoption = "scroll up"
-        self.scrolldownoption = "scroll down"
+        self.sensitivtyinput = config['sensitivity']
+        self.smoothnessinput = config['smoothness']
+        self.scrollinginput = config['scrollingspeed']
+        self.pointeroption = config["pointer"]
+        self.dragclickoption = config["drag click"]
+        self.scrollupoption = config["scroll up"]
+        self.scrolldownoption = config["scroll down"]
         self.thread = None
         self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
@@ -400,24 +418,26 @@ class Main:
 
         InstructionsPageButton = Button(buttonframe, text="Instructions", padx=20, pady=10, bg=buttoncolor
                                         , fg=textcolor, command=self.OpenInstructionsWindow)
-        InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W + E)
-
-        GestureSettingsPageButton = Button(buttonframe, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
-                                           command=self.OpenGestureSettingsWindow, padx=20, pady=10)
-        GestureSettingsPageButton.grid(row=3, column=0, padx=10, pady=10, sticky=W + E)
-
-        MouseSettingsPageButton = Button(buttonframe, text="Mouse Settings", bg=buttoncolor, fg=textcolor,
-                                         command=self.OpenMouseSettingsWindow, padx=20, pady=10)
-
-        MouseSettingsPageButton.grid(row=4, column=0, padx=10, pady=10, sticky=W + E)
-
+        InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W+E)
         buttonframe.grid(row=0, column=0, sticky=N + S)
 
-        # video frame
-        VideoFrame = Frame(main)
-        self.label = Label(VideoFrame, text="Video shown here", padx=10, pady=10)
-        self.label.grid(row=0, column=0)
-        VideoFrame.grid(row=0, column=1)
+
+        settingsFrame = Frame(main, bg=backgroundcolor)
+        GestureSettingsPageButton = Button(settingsFrame, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
+                                           command=self.OpenGestureSettingsWindow, padx=20, pady=10)
+        GestureSettingsPageButton.grid(row=0, column=0, padx=10, pady=10, sticky=W+E)
+
+        MouseSettingsPageButton = Button(settingsFrame, text="Mouse Settings", bg=buttoncolor, fg=textcolor,
+                                         command=self.OpenMouseSettingsWindow, padx=20, pady=10)
+
+        MouseSettingsPageButton.grid(row=1, column=0, padx=10, pady=10, sticky=W + E)
+
+
+        SaveButton = Button(settingsFrame, text='Save Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
+                            command=self.SaveSettings)
+        SaveButton.grid(row=2, column=0, sticky=W+E)
+
+        settingsFrame.grid(row=0, column=1)
 
     # def UpdateVideoLabel(self, image):
     #     img = Image.fromarray(image)
@@ -427,6 +447,19 @@ class Main:
     #     self.label.config(image=img)
 
     # ----------------------------------------------------------
+
+    def SaveSettings(self):
+        config['sensitivity'] = self.sensitivtyinput
+        config['smoothness'] = self.smoothnessinput
+        config['scrollingspeed'] = self.scrollinginput
+        config["pointer"] = self.pointeroption
+        config["drag click"] = self.dragclickoption
+        config["scroll up"] = self.scrollupoption
+        config["scroll down"] = self.scrolldownoption
+        with open('settings.json', 'w') as f:
+            json.dump(config, f)
+
+
     def Start(self):
         global isStopped
         if self.thread is None or not self.thread.is_alive():
