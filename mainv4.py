@@ -46,15 +46,7 @@ fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thu
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
 buttoncolor = "#636363"
-settingslist = [
-    "pointer",
-    "drag click",
-    "scroll up",
-    "scroll down",
-    "sensitivity",
-    "smoothness",
-    "scrollingspeed"
-] # might not be needed
+
 gesturelistforclicking = [
     "pointer",
     "drag click"
@@ -63,6 +55,8 @@ gesturelistforscrolling = [
     "scroll up",
     "scroll down"
 ]
+
+
 
 # dictionary
 config = {"sensitivity": 1, "smoothness": 4,
@@ -405,6 +399,7 @@ class Main:
         self.dragclickoption = config["drag click"]
         self.scrollupoption = config["scroll up"]
         self.scrolldownoption = config["scroll down"]
+
         self.thread = None
         self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
@@ -437,14 +432,20 @@ class Main:
                             command=self.SaveSettings)
         SaveButton.grid(row=2, column=0, sticky=W+E)
 
+        DefaultSettingsButton = Button(settingsFrame, text='Default Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
+                                       command=self.DefaultSettings)
+        DefaultSettingsButton.grid(row=3, column=0, sticky=W+E, padx=10, pady=10)
+
         settingsFrame.grid(row=0, column=1)
 
-    # def UpdateVideoLabel(self, image):
-    #     img = Image.fromarray(image)
-    #     img = ImageTk.PhotoImage(image=img)
-    #     self.label.img = img
-    #
-    #     self.label.config(image=img)
+    def DefaultSettings(self):
+        config = {"sensitivity": 1, "smoothness": 4,
+                  "scrollingspeed": 4, "pointer": "pointer",
+                  "drag click": "drag click", "scroll up": "scroll up",
+                  "scroll down": "scroll down"}
+        with open('settings.json', 'w') as f:
+            json.dump(config, f)
+
 
     # ----------------------------------------------------------
 
@@ -640,6 +641,7 @@ class MouseSettingsWindow:
         mousesettingswindow.geometry("700x500")
         mousesettingswindow.title("Mouse Settings")
         self.updatemousesettingsfunction = updatefunction
+        self.undostack = Stack()
 
         # Title
         titleLabel = Label(mousesettingswindow, text="Mouse Settings", font=10, bg=backgroundcolor)
@@ -680,12 +682,22 @@ class MouseSettingsWindow:
         self.scrollSlider.set(scrollingvalue)
         self.scrollSlider.pack()
         scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-
+        self.undostack.Push(self.sensitivityslider.get())
+        self.undostack.Push(self.smoothSlider.get())
+        self.undostack.Push(self.scrollSlider.get())
+        print(self.undostack)
+        # store previsuous value for each and check if they have changed, if they have then add it to the stack
         # back button
 
         backbutton = Button(mousesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
                             command=lambda: self.Back(mousesettingswindow))
         backbutton.grid(row=4, column=0)
+
+        UndoButton = Button(mousesettingswindow, text="UNDO", bg=buttoncolor, fg=textcolor, command=self.Undo)
+        UndoButton.grid()
+
+    def Undo(self):
+        pass
 
     def Back(self, window):
         # submitting data back through main menu screen
@@ -708,6 +720,19 @@ class InstructionsWindow:
 
         instructionsframe.pack()
 
+class Stack:
+    def __init__(self):
+        self.stack = []
+
+    def Push(self, state):
+        self.stack.append(state)
+        print(self.stack)
+
+    def Pop(self):
+        if self.stack:
+            return self.stack.pop()
+        else:
+            return None
 
 root = Tk()
 root.configure(bg=backgroundcolor)
