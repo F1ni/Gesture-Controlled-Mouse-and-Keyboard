@@ -58,6 +58,8 @@ gesturelistforscrolling = [
 
 # prediction 0 - scroll up
 # prediction 1 - scroll down
+# prediction 2 - open hand
+# prediction 3 - closed hand (fist)
 
 
 
@@ -89,7 +91,7 @@ def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv f
         openedfile = open(gesturespath, 'a', newline='')  # opens the path of the gestures folder and makes it writeable
         # makes it so that no new line is created
         writer = csv.writer(openedfile)  # opened using csv writer
-        writer.writerow([5, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
+        writer.writerow([4, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
         # screenshot of this not working on discord server
         # it still kept overwriting the data so this did not work
         # instead of writing it should be a which means appending
@@ -277,7 +279,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     pTime = 0  # need for frame rate
 
-    with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands:
+    with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         while cap.isOpened() and not isStopped:
             # break by pressing esc
             key = cv2.waitKey(10)
@@ -342,6 +344,15 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         mouse.right_click()
                         time.sleep(0.3)
 
+                    # if middle finger is up - get rid of later
+                    elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[3] == 0 and fingersuplist[4] == 0:
+                        print("middle finger up")
+                        if not middlefingerup:
+                            middlefingerup = True
+                            pyautogui.hotkey("alt", "f4")
+
+                        # cap.release()
+
                     # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
                     # gestures like scrolling only available in mouse and keyboard mode
                     # to make sure they didn't accidentally do a gesture then put the recursive function code in on disc
@@ -359,15 +370,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         whichhandgesture = np.argmax(np.squeeze(prediction))
                         print(np.argmax(np.squeeze(prediction)))
 
-                        if whichhandgesture == 5:
-                            if not middlefingerup:
-                                middlefingerup = True
-                                pyautogui.hotkey("alt", "f4")
-
-                            # cap.release()
-                        else:
-                            middlefingerup = False
-                            WhichGesture(whichhandgesture, scrollspeed)
+                        middlefingerup = False
+                        WhichGesture(whichhandgesture, scrollspeed)
 
                     # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
