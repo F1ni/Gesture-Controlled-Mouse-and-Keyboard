@@ -56,6 +56,9 @@ gesturelistforscrolling = [
     "scroll down"
 ]
 
+# prediction 0 - scroll up
+# prediction 1 - scroll down
+
 
 
 # dictionary
