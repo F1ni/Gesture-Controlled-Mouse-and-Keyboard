@@ -79,8 +79,8 @@ def CalcLandmarkList(image, landmarks):  # algorithm
         # convert the relative coordinates of the landmarks provided by the Mediapipe library into
         # absolute pixel coordinates on the image
 
-        landmark_point.append(
-            [landmark_x, landmark_y])  # we do not need z point as we do not want to change it / normalise it
+        landmark_point.append([landmark_x, landmark_y])
+        # we do not need z point as we do not want to change it / normalise it
     return landmark_point
 
 
@@ -338,8 +338,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
-                    elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[2] == 0 and fingersuplist[
-                        3] == 1 and not rightclick:
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
+                        3] == 1 and fingersuplist[4] == 1 and not rightclick:
                         rightclick = True
                         mouse.right_click()
                         time.sleep(0.3)
@@ -648,7 +648,6 @@ class MouseSettingsWindow:
         mousesettingswindow.geometry("700x500")
         mousesettingswindow.title("Mouse Settings")
         self.updatemousesettingsfunction = updatefunction
-        self.undostack = Stack()
 
         # Title
         titleLabel = Label(mousesettingswindow, text="Mouse Settings", font=10, bg=backgroundcolor)
@@ -689,10 +688,11 @@ class MouseSettingsWindow:
         self.scrollSlider.set(scrollingvalue)
         self.scrollSlider.pack()
         scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.undostack.Push(self.sensitivityslider.get())
-        self.undostack.Push(self.smoothSlider.get())
-        self.undostack.Push(self.scrollSlider.get())
-        print(self.undostack)
+        # self.undostack.Push(self.sensitivityslider.get())
+        # self.undostack.Push(self.smoothSlider.get())
+        # self.undostack.Push(self.scrollSlider.get())
+        #
+
         # store previsuous value for each and check if they have changed, if they have then add it to the stack
         # back button
 
@@ -712,7 +712,6 @@ class MouseSettingsWindow:
                                          self.scrollSlider.get())
         window.destroy()
 
-
 class InstructionsWindow:
     def __init__(self):
         instructionsWindow = Toplevel()
@@ -727,19 +726,19 @@ class InstructionsWindow:
 
         instructionsframe.pack()
 
-class Stack:
-    def __init__(self):
-        self.stack = []
-
-    def Push(self, state):
-        self.stack.append(state)
-        print(self.stack)
-
-    def Pop(self):
-        if self.stack:
-            return self.stack.pop()
-        else:
-            return None
+# class Stack:
+#     def __init__(self):
+#         self.stack = []
+#
+#     def Push(self, state):
+#         self.stack.append(state)
+#         print(self.stack)
+#
+#     def Pop(self):
+#         if self.stack:
+#             return self.stack.pop()
+#         else:
+#             return None
 
 root = Tk()
 root.configure(bg=backgroundcolor)
