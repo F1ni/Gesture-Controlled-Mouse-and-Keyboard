@@ -29,7 +29,7 @@ curLocX, curLocY = 0, 0
 dragclick = False
 normalclick = False
 rightclick = False
-
+normalclickcount = 0
 # -----------------------------------------------------------------------------------------------------------------------------------
 mp_hands = mp.solutions.hands
 model = tf.keras.models.load_model("Model/model")
@@ -203,6 +203,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     global normalclick
     global rightclick
     global dragclick
+    global normalclickcount
     xindex, yindex = landmark_list[8][0], landmark_list[8][1]
     xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
     xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
@@ -225,18 +226,25 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         if statusgesture == "pointer":
             if distanceofthumbandindex < 65 and not normalclick:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
+                normalclickcount += 1
                 normalclick = True
-                mouse.click()
-                print("click")
-                time.sleep(0.2)
+
+                if normalclickcount < 3:
+                    mouse.click()
+                    print("click")
+                    time.sleep(0.2)
             else:
                 normalclick = False
         elif statusgesture == "drag click":
             if distance < 35 and not normalclick:
+                normalclickcount += 1
                 normalclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
-                mouse.click()  # holds the mouse down
-                time.sleep(0.2)
+                if normalclickcount < 3:
+                    mouse.click()
+                    print("click")
+                    time.sleep(0.2)
+
             else:  # so that it does not realease the mouse if the part above never even eran
                 normalclick = False
 
@@ -244,7 +252,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
         prevLocX, prevLocY = curLocX, curLocY
-
+        normalclickcount = 0
         print(distance)
         if statusgesture == "pointer":
             if distanceofthumbandindex < 40:  # if distance is less than a certain number
@@ -252,7 +260,6 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                 dragclick = True
                 mouse.press(button='left')
                 print("click")
-
             else:
                 if dragclick:
                     mouse.release(button='left')
@@ -272,6 +279,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global fingersuplist
     global isStopped
     global rightclick
+    global normalclickcount
     middlefingerup = False
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
@@ -340,6 +348,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     # if index finger is up and middle two fingers are down
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         3] == 1 and fingersuplist[4] == 1 and not rightclick:
+                        normalclickcount = 0
                         rightclick = True
                         mouse.right_click()
                         time.sleep(0.3)
@@ -359,6 +368,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     else:
                         # print(np.array(normalisedLandmarkList).shape)
                         # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging
+                        normalclickcount = 0
                         normalisedLandmarkList = np.array(normalisedLandmarkList,
                                                           dtype=np.float32)  # the normalised data at first was of type float64, however the
                         # model will only take in data of type float 32, so had to convert it
