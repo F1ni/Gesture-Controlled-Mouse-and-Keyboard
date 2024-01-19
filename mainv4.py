@@ -188,12 +188,11 @@ def DetectHands(image, handsmodel):
     return image, result
 
 
-def WhichGesture(gesturenumber, scrollspeed):
-    if gesturenumber == 0:
+def WhichGesture(scrollspeed, option):
+    if option == "scroll up":
         mouse.wheel(delta=1 * scrollspeed)
-    elif gesturenumber == 1:
-        mouse.wheel(delta=-1 * scrollspeed)  # when doing key algorithm for this include the rest of the psuedocode that will be there
-
+    else:
+        mouse.wheel(delta=-1 * scrollspeed)
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture):
     global prevLocX
@@ -378,10 +377,16 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         prediction = model.predict(normalisedLandmarkList)
                         # print("prediction: ")
                         whichhandgesture = np.argmax(np.squeeze(prediction))
+
+                        if whichhandgesture == 0:
+                            WhichGesture(scrollspeed, pointupoption)
+                        elif whichhandgesture == 1:
+                            WhichGesture(scrollspeed, pointdownoption)
+
                         print(np.argmax(np.squeeze(prediction)))
 
                         middlefingerup = False
-                        WhichGesture(whichhandgesture, scrollspeed)
+
 
                     # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
