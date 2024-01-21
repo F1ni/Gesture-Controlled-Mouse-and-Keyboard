@@ -287,6 +287,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     pTime = 0  # need for frame rate
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
+        # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
         while cap.isOpened() and not isStopped:
             # break by pressing esc
             key = cv2.waitKey(10)
@@ -359,8 +360,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             middlefingerup = True
                             pyautogui.hotkey("alt", "f4")
 
-                        # cap.release()
-
                     # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
                     # gestures like scrolling only available in mouse and keyboard mode
                     # to make sure they didn't accidentally do a gesture then put the recursive function code in on disc
@@ -386,11 +385,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         print(np.argmax(np.squeeze(prediction)))
 
                         middlefingerup = False
-
-
-                    # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
-
-
 
             # frame rate
             cTime = time.time()
@@ -741,19 +735,38 @@ class InstructionsWindow:
 
         instructionsframe.pack()
 
-# class Stack:
-#     def __init__(self):
-#         self.stack = []
-#
-#     def Push(self, state):
-#         self.stack.append(state)
-#         print(self.stack)
-#
-#     def Pop(self):
-#         if self.stack:
-#             return self.stack.pop()
-#         else:
-#             return None
+class CircularGestureQueue: # first in first out
+    def __init__(self, max_size):
+        self.max_size = max_size
+        self.gesture_history = [None] * max_size # intially set to none
+        self.front = 0 # Index of the front element
+        self.rear = 0   # Index where the next element will be inserted
+
+    def add_gesture(self, gesture):
+        # Check if the queue is full before inserting
+        if self.is_full():
+            self.front = (self.front + 1) % self.max_size  # Move the front index in a circular manner
+
+        # when the queue is full the front pointer will move such that the oldest gesture gets replaced by the latest
+
+        self.gesture_history[self.rear] = gesture
+        self.rear = (self.rear + 1) % self.max_size  # Move the rear index in a circular manner
+
+    def get_history(self):
+        # Extract the valid elements in the circular queue
+        history = []
+        for i in range(self.front, self.front + self.size()):
+            index = i % self.max_size
+            history.append(self.gesture_history[index])
+        return history
+
+    def is_full(self):
+        return (self.rear + 1) % self.max_size == self.front
+
+    def size(self):
+        return (self.rear - self.front + self.max_size) % self.max_size
+
+
 
 root = Tk()
 root.configure(bg=backgroundcolor)
