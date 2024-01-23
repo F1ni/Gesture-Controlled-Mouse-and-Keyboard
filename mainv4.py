@@ -235,7 +235,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
 
                 if normalclickcount < 3:
                     mouse.click()
-                    print("click")
+                    # print("click")
                     time.sleep(0.2)
             else:
                 normalclick = False
@@ -246,7 +246,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                 # changed the libraryand it is much smoother now
                 if normalclickcount < 3:
                     mouse.click()
-                    print("click")
+                    # print("click")
                     time.sleep(0.2)
 
             else:  # so that it does not realease the mouse if the part above never even eran
@@ -257,13 +257,13 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
         prevLocX, prevLocY = curLocX, curLocY
         normalclickcount = 0
-        print(distance)
+        # print(distance)
         if statusgesture == "pointer":
             if distanceofthumbandindex < 40:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                 dragclick = True
                 mouse.press(button='left')
-                print("click")
+                # print("click")
             else:
                 if dragclick:
                     mouse.release(button='left')
@@ -288,6 +288,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
     cap.set(4, hCam)
+    gesturehistoryqueue = CircularGestureQueue(6)
 
     pTime = 0  # need for frame rate
 
@@ -303,6 +304,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                 mode = 3
             elif key == 110:  # n
                 mode = 0
+                print(gesturehistoryqueue.get_history())
 
             success, img = cap.read()  # reads the video captured and returns two values
             if not success:  # if there is no image then break out of the loop
@@ -332,7 +334,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                     whichhand = whichHand(landmark_list)  # checks which hand is showing
                     fingersuplist = fingersUp(landmark_list, whichhand)
-                    print(fingersuplist)
+                    # print(fingersuplist)
 
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
@@ -340,6 +342,10 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1:  # now will change the mouse
                         middlefingerup = False
+
+                        if gesturehistoryqueue.previousgesture != pointergestureoption:
+                            gesturehistoryqueue.add_gesture(pointergestureoption)
+
                         WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer")
 
 
@@ -347,6 +353,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         middlefingerup = False
+                        if gesturehistoryqueue.previousgesture != indexandmiddleoption:
+                            gesturehistoryqueue.add_gesture(indexandmiddleoption)
                         WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle")
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
@@ -354,15 +362,19 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         3] == 1 and fingersuplist[4] == 1 and not rightclick:
                         normalclickcount = 0
+                        if gesturehistoryqueue.previousgesture != "Right Click":
+                            gesturehistoryqueue.add_gesture("Right Click")
                         rightclick = True
                         mouse.right_click()
                         time.sleep(0.3)
 
                     # if middle finger is up - get rid of later
                     elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[3] == 0 and fingersuplist[4] == 0:
-                        print("middle finger up")
+                        # print("middle finger up")
                         if not middlefingerup:
                             middlefingerup = True
+                            if gesturehistoryqueue.previousgesture != "Middle Finger":
+                                gesturehistoryqueue.add_gesture("Middle Finger")
                             pyautogui.hotkey("alt", "f4")
 
                     # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
@@ -383,11 +395,15 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         whichhandgesture = np.argmax(np.squeeze(prediction))
 
                         if whichhandgesture == 0:
+                            if gesturehistoryqueue.previousgesture != pointupoption:
+                                gesturehistoryqueue.add_gesture(pointupoption)
                             WhichGesture(scrollspeed, pointupoption)
                         elif whichhandgesture == 1:
+                            if gesturehistoryqueue.previousgesture != pointdownoption:
+                                gesturehistoryqueue.add_gesture(pointdownoption)
                             WhichGesture(scrollspeed, pointdownoption)
 
-                        print(np.argmax(np.squeeze(prediction)))
+                        # print(np.argmax(np.squeeze(prediction)))
 
                         middlefingerup = False
 
@@ -742,14 +758,17 @@ class CircularGestureQueue: # first in first out
         self.gesture_history = [None] * max_size # intially set to none
         self.front = 0 # Index of the front element
         self.rear = 0   # Index where the next element will be inserted
+        self.previousgesture = "" # used for the history
 
     def add_gesture(self, gesture):
         # Check if the queue is full before inserting
         if self.is_full():
             self.front = (self.front + 1) % self.max_size  # Move the front index in a circular manner
 
-        # when the queue is full the front pointer will move such that the oldest gesture gets replaced by the latest
+        self.previousgesture = gesture
 
+        # when the queue is full the front pointer will move such that the oldest gesture gets replaced by the latest
+        print(self.get_history())
         self.gesture_history[self.rear] = gesture
         self.rear = (self.rear + 1) % self.max_size  # Move the rear index in a circular manner
 
