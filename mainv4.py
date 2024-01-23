@@ -697,10 +697,6 @@ class MouseSettingsWindow:
         self.scrollSlider.set(scrollingvalue)
         self.scrollSlider.pack()
         scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        # self.undostack.Push(self.sensitivityslider.get())
-        # self.undostack.Push(self.smoothSlider.get())
-        # self.undostack.Push(self.scrollSlider.get())
-        #
 
         # store previsuous value for each and check if they have changed, if they have then add it to the stack
         # back button
