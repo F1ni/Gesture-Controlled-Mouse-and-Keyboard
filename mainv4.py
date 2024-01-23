@@ -15,37 +15,43 @@ from tkinter import *
 from PIL import Image, ImageTk
 import threading
 
-# -----------------------------------------------------------------------------------------------------------------------------------
+# -----Mediapipe variables---------------------------------------------------------------------------------------------------------------------
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
-# -----------------------------------------------------------------------------------------------------------------------------------
+mp_hands = mp.solutions.hands
+# Tensorflow ---------------------------------------------------------------------------------
+model = tf.keras.models.load_model("Model/model")
+
+# -----Frame Resolution-------------------------------------------------------------------------------------------------------------------
 wCam, hCam = 640, 480
 frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
-smoothening = 7  # slider for this
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 prevLocX, prevLocY = 0, 0
 curLocX, curLocY = 0, 0
+# Boolean -----------------------------------------------------------
 dragclick = False
 normalclick = False
 rightclick = False
-normalclickcount = 0
+isStopped = False
+
 # -----------------------------------------------------------------------------------------------------------------------------------
-mp_hands = mp.solutions.hands
-model = tf.keras.models.load_model("Model/model")
+normalclickcount = 0
+smoothening = 7  # slider for this, might not need this
 # -----------------------------------------------------------------------------------------------------------------------------------
 screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
 screencordy = 0
 # -----------------------------------------------------------------------------------------------------------------------------------
 mode = 0
-isStopped = False
 # -----------------------------------------------------------------------------------------------------------------------------------
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
-# --------------- gui -----------------------
-# threading
+# --------------- gui -------------------------------------------------------------------------------------------------
+# color variables
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
 buttoncolor = "#636363"
+
+# -----------------------------------------------------------------------------------------------
 
 gesturelistforclicking = [
     "pointer",
@@ -61,19 +67,18 @@ gesturelistforscrolling = [
 # prediction 2 - open hand
 # prediction 3 - closed hand (fist)
 
-
-
 # dictionary
 config = {"sensitivity": 1, "smoothness": 4,
                   "scrollingspeed": 4, "pointer": "pointer",
                   "drag click": "drag click", "scroll up": "scroll up",
                   "scroll down": "scroll down"}
+# -------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 def CalcLandmarkList(image, landmarks):  # algorithm
     img_width, img_height = image.shape[1], image.shape[0]  # gets the width and height of the video screen
     landmark_point = []
-    for i, landmark in enumerate(landmarks.landmark):
+    for i, landmark in enumerate(landmarks.landmark): # makes it so that 
         landmark_x = int(landmark.x * img_width)
         landmark_y = int(landmark.y * img_height)
         # convert the relative coordinates of the landmarks provided by the Mediapipe library into
