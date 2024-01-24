@@ -340,7 +340,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
-                        4] == 1:  # now will change the mouse
+                        4] == 1 and fingersuplist[3] == 0:  # now will change the mouse
                         middlefingerup = False
 
                         if gesturehistoryqueue.previousgesture != pointergestureoption:
@@ -406,6 +406,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         # print(np.argmax(np.squeeze(prediction)))
 
                         middlefingerup = False
+                    if gesturehistoryqueue.size() != 0:
+                        cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear-1],
+                                (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
             # frame rate
             cTime = time.time()
@@ -451,7 +454,12 @@ class Main:
         InstructionsPageButton = Button(buttonframe, text="Instructions", padx=20, pady=10, bg=buttoncolor
                                         , fg=textcolor, command=self.OpenInstructionsWindow)
         InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W+E)
+
+        GestureHistoryButton = Button(buttonframe, text="View Gesture History", padx=20, pady=10, bg=buttoncolor,
+                                      fg=textcolor)
+        
         buttonframe.grid(row=0, column=0, sticky=N + S)
+
 
 
         settingsFrame = Frame(main, bg=backgroundcolor)
@@ -530,6 +538,9 @@ class Main:
 
     def OpenInstructionsWindow(self):
         instructionsWindow = InstructionsWindow()
+
+    def OpenGestureHistoryWindow(self):
+        pass
 
     def UpdateMouseSettings(self, sensitivtyinput, smoothnessinput, scrollinginput):
         self.sensitivtyinput = sensitivtyinput
@@ -694,7 +705,7 @@ class MouseSettingsWindow:
         self.sensitivityslider.set(sensitivtyvalue)
         self.sensitivityslider.pack()
 
-        sensitvityframe.grid(row=1, column=0, columnspan=2, sticky='ew', padx=10, pady=10)
+        sensitvityframe.grid(row=1, column=0, columnspkan=2, sticky='ew', padx=10, pady=10)
 
         # SMOOTHNESS FRAME ----------------------------------------------------------------------------
         smoothnessframe = Frame(mousesettingswindow)
@@ -751,6 +762,12 @@ class InstructionsWindow:
         # more photos of the gestures here to explain how to use the program
 
         instructionsframe.pack()
+
+class GestureHistoryWindow:
+    def __init__(self, gesturehistorylist):
+        historywindow = Toplevel()
+        label = Label(historywindow, text=gesturehistorylist)
+        label.pack(padx=10, pady=10)
 
 class CircularGestureQueue: # first in first out
     def __init__(self, max_size):
