@@ -45,6 +45,7 @@ screencordy = 0
 mode = 0
 # -----------------------------------------------------------------------------------------------------------------------------------
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
+gesturehistorylist = []
 # --------------- gui -------------------------------------------------------------------------------------------------
 # color variables
 backgroundcolor = "#B4B4B4"
@@ -284,12 +285,13 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global isStopped
     global rightclick
     global normalclickcount
+    global gesturehistorylist
     middlefingerup = False
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
     cap.set(4, hCam)
-    gesturehistoryqueue = CircularGestureQueue(6)
 
+    gesturehistoryqueue = CircularGestureQueue(6)
     pTime = 0  # need for frame rate
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
@@ -410,6 +412,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear-1],
                                 (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
+                        gesturehistorylist = gesturehistoryqueue.get_history()
+
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
@@ -417,6 +421,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
             # show image
             cv2.imshow("Gesture Recog", img)
+
+
 
     cap.release()
     cv2.destroyAllWindows()
@@ -456,7 +462,9 @@ class Main:
         InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W+E)
 
         GestureHistoryButton = Button(buttonframe, text="View Gesture History", padx=20, pady=10, bg=buttoncolor,
-                                      fg=textcolor)
+                                      fg=textcolor, command=self.OpenGestureHistoryWindow)
+
+        GestureHistoryButton.grid(row=3, column=0, padx=10, pady=10, sticky=W+E)
         
         buttonframe.grid(row=0, column=0, sticky=N + S)
 
@@ -540,7 +548,7 @@ class Main:
         instructionsWindow = InstructionsWindow()
 
     def OpenGestureHistoryWindow(self):
-        pass
+        gesturehistorywindow = GestureHistoryWindow()
 
     def UpdateMouseSettings(self, sensitivtyinput, smoothnessinput, scrollinginput):
         self.sensitivtyinput = sensitivtyinput
@@ -737,12 +745,6 @@ class MouseSettingsWindow:
                             command=lambda: self.Back(mousesettingswindow))
         backbutton.grid(row=4, column=0)
 
-        UndoButton = Button(mousesettingswindow, text="UNDO", bg=buttoncolor, fg=textcolor, command=self.Undo)
-        UndoButton.grid()
-
-    def Undo(self):
-        pass
-
     def Back(self, window):
         # submitting data back through main menu screen
         self.updatemousesettingsfunction(self.sensitivityslider.get(), self.smoothSlider.get(),
@@ -764,10 +766,21 @@ class InstructionsWindow:
         instructionsframe.pack()
 
 class GestureHistoryWindow:
-    def __init__(self, gesturehistorylist):
+
+    def __init__(self):
+        global gesturehistorylist
         historywindow = Toplevel()
-        label = Label(historywindow, text=gesturehistorylist)
-        label.pack(padx=10, pady=10)
+        historywindow.title("Gesture History")
+        historywindow.geometry("300x200")
+
+        text = Text(historywindow, height=6, width=30)
+        text.pack(padx=10, pady=10)
+        reversedlist = gesturehistorylist[::-1]
+        for i, item in enumerate(reversedlist):
+            text.insert(END, str(i+1) + " " + item+"\n") # makes it so the item is put in the next line
+
+        # the value at number 1 is the oldest gestuer and number 5 is the newest gesture
+
 
 class CircularGestureQueue: # first in first out
     def __init__(self, max_size):
