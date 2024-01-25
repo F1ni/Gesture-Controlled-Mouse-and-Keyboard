@@ -92,8 +92,7 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(
-        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
@@ -115,9 +114,9 @@ def CalulateHandSize(landmarklist):
 
     wristx, wristy = landmarklist[0][0], landmarklist[0][1]
     middletipx, middletipy = landmarklist[12][0], landmarklist[12][1]
-
-    size = math.sqrt(((wristx - wristy) ** 2) + ((middletipy - middletipy) ** 2))
-
+    print(wristx, wristy, middletipx, middletipy)
+    size = math.sqrt((wristx - wristy) ** 2 + (middletipx - middletipy) ** 2)
+    print(size)
     return size
 
 def flattenlist(iterableList):  # ALGORITHM
@@ -261,7 +260,6 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     mouse.click()
                     # print("click")
 
-
             else:  # so that it does not realease the mouse if the part above never even eran
                 normalclick = False
 
@@ -307,7 +305,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     gesturehistoryqueue = CircularGestureQueue(6)
     pTime = 0  # need for frame rate
-    handsize = 0
+    calibrateddistance = 30
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
@@ -428,7 +426,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                                 gesturehistoryqueue.add_gesture(pointdownoption)
                             WhichGesture(scrollspeed, pointdownoption)
                         elif whichhandgesture == 2:
-                            handsize = CalulateHandSize(landmark_list)
+                            calibrateddistance = int(CalulateHandSize(landmark_list) * 0.18)
 
                         # print(np.argmax(np.squeeze(prediction)))
 
@@ -438,7 +436,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         gesturehistorylist = gesturehistoryqueue.get_history()
-
+                    print(calibrateddistance)
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
