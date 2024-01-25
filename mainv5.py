@@ -70,16 +70,18 @@ gesturelistforscrolling = [
 
 # dictionary
 config = {"sensitivity": 1, "smoothness": 4,
-                  "scrollingspeed": 4, "pointer": "pointer",
-                  "drag click": "drag click", "scroll up": "scroll up",
-                  "scroll down": "scroll down"}
+          "scrollingspeed": 4, "pointer": "pointer",
+          "drag click": "drag click", "scroll up": "scroll up",
+          "scroll down": "scroll down"}
+
+
 # -------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 def CalcLandmarkList(image, landmarks):  # algorithm
     img_width, img_height = image.shape[1], image.shape[0]  # gets the width and height of the video screen
     landmark_point = []
-    for i, landmark in enumerate(landmarks.landmark): # makes it so that 
+    for i, landmark in enumerate(landmarks.landmark):  # makes it so that
         landmark_x = int(landmark.x * img_width)
         landmark_y = int(landmark.y * img_height)
         # convert the relative coordinates of the landmarks provided by the Mediapipe library into
@@ -90,7 +92,8 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(
+        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
@@ -104,6 +107,18 @@ def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv f
         #  The * symbol is used to unpack the array elements into individual values within the row.
         time.sleep(0.5)
 
+
+def CalulateHandSize(landmarklist):
+    # only do if the gesture is the open hand
+    if landmarklist is None:
+        return None
+
+    wristx, wristy = landmarklist[0][0], landmarklist[0][1]
+    middletipx, middletipy = landmarklist[12][0], landmarklist[12][1]
+
+    size = math.sqrt(((wristx - wristy) ** 2) + ((middletipy - middletipy) ** 2))
+
+    return size
 
 def flattenlist(iterableList):  # ALGORITHM
     for it in iterableList:
@@ -200,7 +215,8 @@ def WhichGesture(scrollspeed, option):
     else:
         mouse.wheel(delta=-1 * scrollspeed)
 
-def WhatFunction(nameoffunction, landmark_list,mousesens, mousesmooth, img, statusgesture, xindex, yindex,
+
+def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
                  xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip):
     global prevLocX
     global prevLocY
@@ -210,7 +226,6 @@ def WhatFunction(nameoffunction, landmark_list,mousesens, mousesmooth, img, stat
     global rightclick
     global dragclick
     global normalclickcount
-
 
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
@@ -250,7 +265,7 @@ def WhatFunction(nameoffunction, landmark_list,mousesens, mousesmooth, img, stat
             else:  # so that it does not realease the mouse if the part above never even eran
                 normalclick = False
 
-    elif nameoffunction == "drag click": # drag clicking
+    elif nameoffunction == "drag click":  # drag clicking
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
         prevLocX, prevLocY = curLocX, curLocY
@@ -276,7 +291,9 @@ def WhatFunction(nameoffunction, landmark_list,mousesens, mousesmooth, img, stat
                     mouse.release(button='left')
                     dragclick = False
 
-def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption, pointdownoption):
+
+def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption,
+                 pointdownoption):
     global mode
     global fingersuplist
     global isStopped
@@ -290,6 +307,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     gesturehistoryqueue = CircularGestureQueue(6)
     pTime = 0  # need for frame rate
+    handsize = 0
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
@@ -344,19 +362,20 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1 and fingersuplist[3] == 0:  # now will change the mouse
                         middlefingerup = False
-                        cv2.line(img, (xthumbtip, ythumbtip), (xlowerindex, ylowerindex), (0,0,255), 4)
+                        cv2.line(img, (xthumbtip, ythumbtip), (xlowerindex, ylowerindex), (0, 0, 255), 4)
                         if gesturehistoryqueue.previousgesture != pointergestureoption:
                             gesturehistoryqueue.add_gesture(pointergestureoption)
 
-                        WhatFunction(pointergestureoption, landmark_list,mousesens, mousesmooth, img, "pointer",
+                        WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip)
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
+                        4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         middlefingerup = False
-                        cv2.line(img, (xindex, yindex), (xmiddle, ymiddle),(0, 0, 255), 4)
+                        cv2.line(img, (xindex, yindex), (xmiddle, ymiddle), (0, 0, 255), 4)
                         if gesturehistoryqueue.previousgesture != indexandmiddleoption:
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
                         WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
@@ -374,7 +393,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         time.sleep(0.3)
 
                     # if middle finger is up - get rid of later
-                    elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[3] == 0 and fingersuplist[4] == 0:
+                    elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
+                        3] == 0 and fingersuplist[4] == 0:
                         # print("middle finger up")
                         if not middlefingerup:
                             middlefingerup = True
@@ -407,13 +427,15 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             if gesturehistoryqueue.previousgesture != pointdownoption:
                                 gesturehistoryqueue.add_gesture(pointdownoption)
                             WhichGesture(scrollspeed, pointdownoption)
+                        elif whichhandgesture == 2:
+                            handsize = CalulateHandSize(landmark_list)
 
                         # print(np.argmax(np.squeeze(prediction)))
 
                         middlefingerup = False
                     if gesturehistoryqueue.size() != 0:
-                        cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear-1],
-                                (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
+                        cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear - 1],
+                                    (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         gesturehistorylist = gesturehistoryqueue.get_history()
 
@@ -424,8 +446,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
             # show image
             cv2.imshow("Gesture Recog", img)
-
-
 
     cap.release()
     cv2.destroyAllWindows()
@@ -462,35 +482,33 @@ class Main:
 
         InstructionsPageButton = Button(buttonframe, text="Instructions", padx=20, pady=10, bg=buttoncolor
                                         , fg=textcolor, command=self.OpenInstructionsWindow)
-        InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W+E)
+        InstructionsPageButton.grid(row=2, column=0, padx=10, pady=10, sticky=W + E)
 
         GestureHistoryButton = Button(buttonframe, text="View Gesture History", padx=20, pady=10, bg=buttoncolor,
                                       fg=textcolor, command=self.OpenGestureHistoryWindow)
 
-        GestureHistoryButton.grid(row=3, column=0, padx=10, pady=10, sticky=W+E)
-        
+        GestureHistoryButton.grid(row=3, column=0, padx=10, pady=10, sticky=W + E)
+
         buttonframe.grid(row=0, column=0, sticky=N + S)
-
-
 
         settingsFrame = Frame(main, bg=backgroundcolor)
         GestureSettingsPageButton = Button(settingsFrame, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
                                            command=self.OpenGestureSettingsWindow, padx=20, pady=10)
-        GestureSettingsPageButton.grid(row=0, column=0, padx=10, pady=10, sticky=W+E)
+        GestureSettingsPageButton.grid(row=0, column=0, padx=10, pady=10, sticky=W + E)
 
         MouseSettingsPageButton = Button(settingsFrame, text="Mouse Settings", bg=buttoncolor, fg=textcolor,
                                          command=self.OpenMouseSettingsWindow, padx=20, pady=10)
 
         MouseSettingsPageButton.grid(row=1, column=0, padx=10, pady=10, sticky=W + E)
 
-
         SaveButton = Button(settingsFrame, text='Save Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
                             command=self.SaveSettings)
-        SaveButton.grid(row=2, column=0, sticky=W+E)
+        SaveButton.grid(row=2, column=0, sticky=W + E)
 
-        DefaultSettingsButton = Button(settingsFrame, text='Default Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
+        DefaultSettingsButton = Button(settingsFrame, text='Default Settings', padx=20, pady=10, bg=buttoncolor,
+                                       fg=textcolor,
                                        command=self.DefaultSettings)
-        DefaultSettingsButton.grid(row=3, column=0, sticky=W+E, padx=10, pady=10)
+        DefaultSettingsButton.grid(row=3, column=0, sticky=W + E, padx=10, pady=10)
 
         settingsFrame.grid(row=0, column=1)
 
@@ -501,7 +519,6 @@ class Main:
                   "scroll down": "scroll down"}
         with open('settings.json', 'w') as f:
             json.dump(config, f)
-
 
     # ----------------------------------------------------------
 
@@ -516,13 +533,13 @@ class Main:
         with open('settings.json', 'w') as f:
             json.dump(config, f)
 
-
     def Start(self):
         global isStopped
         if self.thread is None or not self.thread.is_alive():
             isStopped = False
             self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
-                                                                       , self.scrollinginput, self.pointeroption, self.dragclickoption
+                                                                       , self.scrollinginput, self.pointeroption,
+                                                                       self.dragclickoption
                                                                        , self.scrollupoption, self.scrolldownoption))
             self.thread.start()
 
@@ -694,6 +711,7 @@ class GestureSettingsWindow:
     def returnindex(self, list, word):
         return list.index(word)
 
+
 class MouseSettingsWindow:
     def __init__(self, updatefunction, sensitivtyvalue, smoothnessvalue, scrollingvalue):
         mousesettingswindow = Toplevel(bg=backgroundcolor)
@@ -754,6 +772,7 @@ class MouseSettingsWindow:
                                          self.scrollSlider.get())
         window.destroy()
 
+
 class InstructionsWindow:
     def __init__(self):
         instructionsWindow = Toplevel()
@@ -768,6 +787,7 @@ class InstructionsWindow:
 
         instructionsframe.pack()
 
+
 class GestureHistoryWindow:
 
     def __init__(self):
@@ -780,18 +800,18 @@ class GestureHistoryWindow:
         text.pack(padx=10, pady=10)
         reversedlist = gesturehistorylist[::-1]
         for i, item in enumerate(reversedlist):
-            text.insert(END, str(i+1) + " " + item+"\n") # makes it so the item is put in the next line
+            text.insert(END, str(i + 1) + " " + item + "\n")  # makes it so the item is put in the next line
 
         # the value at number 1 is the oldest gestuer and number 5 is the newest gesture
 
 
-class CircularGestureQueue: # first in first out
+class CircularGestureQueue:  # first in first out
     def __init__(self, max_size):
         self.max_size = max_size
-        self.gesture_history = [None] * max_size # intially set to none
-        self.front = 0 # Index of the front element
-        self.rear = 0   # Index where the next element will be inserted
-        self.previousgesture = "" # used for the history
+        self.gesture_history = [None] * max_size  # intially set to none
+        self.front = 0  # Index of the front element
+        self.rear = 0  # Index where the next element will be inserted
+        self.previousgesture = ""  # used for the history
 
     def add_gesture(self, gesture):
         # Check if the queue is full before inserting
@@ -818,6 +838,8 @@ class CircularGestureQueue: # first in first out
 
     def size(self):
         return (self.rear - self.front + self.max_size) % self.max_size
+
+
 root = Tk()
 root.configure(bg=backgroundcolor)
 root.title("Hand Gesture Application")
