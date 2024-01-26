@@ -92,7 +92,8 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(
+        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
@@ -114,9 +115,9 @@ def CalulateHandSize(landmarklist):
 
     wristx, wristy = landmarklist[0][0], landmarklist[0][1]
     middletipx, middletipy = landmarklist[12][0], landmarklist[12][1]
-    print(wristx, wristy, middletipx, middletipy)
+
     size = math.sqrt((wristx - wristy) ** 2 + (middletipx - middletipy) ** 2)
-    print(size)
+    print("size: " + str(size))
     return size
 
 def flattenlist(iterableList):  # ALGORITHM
@@ -216,7 +217,7 @@ def WhichGesture(scrollspeed, option):
 
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
-                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip):
+                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddist):
     global prevLocX
     global prevLocY
     global curLocY
@@ -232,7 +233,8 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-    print(distanceofthumbandindex)
+    print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
+    print("ditsance between index and middle finger: " + str(distance))
     if nameoffunction == "pointer":
         rightclick = False
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
@@ -240,7 +242,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         prevLocX, prevLocY = curLocX, curLocY
 
         if statusgesture == "pointer":
-            if distanceofthumbandindex < 73 and not normalclick:  # if distance is less than a certain number
+            if distanceofthumbandindex < calibrateddist and not normalclick:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                 normalclickcount += 1
                 normalclick = True
@@ -252,7 +254,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
             else:
                 normalclick = False
         elif statusgesture == "drag click":
-            if distance < 35 and not normalclick:
+            if distance < calibrateddist and not normalclick:
                 normalclickcount += 1
                 normalclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
@@ -265,12 +267,16 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
 
     elif nameoffunction == "drag click":  # drag clicking
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
-        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed to mouse library
+        mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed
+
+
+
+        x               nyb8ybibiuiuhiuh                # to mouse library
         prevLocX, prevLocY = curLocX, curLocY
         normalclickcount = 0
         # print(distance)
         if statusgesture == "pointer":
-            if distanceofthumbandindex < 40:  # if distance is less than a certain number
+            if distanceofthumbandindex < calibrateddist:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                 dragclick = True
                 mouse.press(button='left')
@@ -280,7 +286,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     mouse.release(button='left')
                     dragclick = False
         elif statusgesture == "indexandmiddle":
-            if distance < 35:
+            if distance < calibrateddist:
                 dragclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
                 mouse.press(button='left')  # holds the mouse down
@@ -365,7 +371,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             gesturehistoryqueue.add_gesture(pointergestureoption)
 
                         WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
-                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip)
+                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddistance)
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
@@ -377,7 +383,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         if gesturehistoryqueue.previousgesture != indexandmiddleoption:
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
                         WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
-                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip)
+                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddistance)
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -436,7 +442,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         gesturehistorylist = gesturehistoryqueue.get_history()
-                    print(calibrateddistance)
+                    print("calibrateddistance: " + str(calibrateddistance))
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
