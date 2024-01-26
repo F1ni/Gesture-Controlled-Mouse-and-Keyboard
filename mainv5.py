@@ -27,8 +27,7 @@ wCam, hCam = 640, 480
 frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
 
 # -----------------------------------------------------------------------------------------------------------------------------------
-prevLocX, prevLocY = 0, 0
-curLocX, curLocY = 0, 0
+
 # Boolean -----------------------------------------------------------
 dragclick = False
 normalclick = False
@@ -217,7 +216,8 @@ def WhichGesture(scrollspeed, option):
 
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
-                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, distfornormalclick, distfordragclick):
+                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, distfornormalclick, distfordragclick,
+                 prevLocX, prevLocY):
     global normalclick
     global rightclick
     global dragclick
@@ -225,11 +225,11 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
 
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
-    distanceofthumbandindex = math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2))
+    distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-    print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
+    # print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
     print("ditsance between index and middle finger: " + str(distance))
     if nameoffunction == "pointer":
         rightclick = False
@@ -289,6 +289,8 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     mouse.release(button='left')
                     dragclick = False
 
+    return prevLocX, prevLocY
+
 
 def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption,
                  pointdownoption):
@@ -307,6 +309,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     pTime = 0  # need for frame rate
     calibrateddistancefordragclick = 30
     calibrateddistancefornormalclick = 30
+
+    prevLocX, prevLocY = 0, 0
+
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
@@ -357,6 +362,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
+                    print()
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         4] == 1 and fingersuplist[3] == 0:  # now will change the mouse
@@ -365,9 +371,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         if gesturehistoryqueue.previousgesture != pointergestureoption:
                             gesturehistoryqueue.add_gesture(pointergestureoption)
 
-                        WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
+                        prevLocX, prevLocY = WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
-                                     calibrateddistancefornormalclick, calibrateddistancefordragclick)
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY)
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
@@ -378,9 +384,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         cv2.line(img, (xindex, yindex), (xmiddle, ymiddle), (0, 0, 255), 4)
                         if gesturehistoryqueue.previousgesture != indexandmiddleoption:
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
-                        WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
+                        prevLocX, prevLocY = WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
-                                     calibrateddistancefornormalclick, calibrateddistancefordragclick)
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY)
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -430,8 +436,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             WhichGesture(scrollspeed, pointdownoption)
                         elif whichhandgesture == 2:
                             handsize = CalulateHandSize(landmark_list)
-                            calibrateddistancefornormalclick = int(handsize * 1.48)
-                            calibrateddistancefordragclick = int(handsize * 0.18)
+                            calibrateddistancefornormalclick = int(handsize * 1.28)
+                            calibrateddistancefordragclick = int(handsize * 0.3)
 
                         # print(np.argmax(np.squeeze(prediction)))
 
@@ -441,7 +447,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         gesturehistorylist = gesturehistoryqueue.get_history()
-                    print("calibrateddistance: " + str(calibrateddistance))
+                    # print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick))
+                    print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick))
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
@@ -783,6 +790,9 @@ class InstructionsWindow:
         instructionsWindow.geometry("700x500")
         instructionsframe = Frame(instructionsWindow)
 
+        # add another text widget and make the state disabled. insert all of the text needed
+        instructionstextwidget = Text(instructionsframe, height=20, width=200)
+        instructionstextwidget.pack()
         # store text in a separate text file or variable
         label1 = Label(instructionsframe, text="Instructions here")
         label1.pack(padx=10, pady=10)
@@ -792,19 +802,19 @@ class InstructionsWindow:
 
 
 class GestureHistoryWindow:
-
     def __init__(self):
         global gesturehistorylist
         historywindow = Toplevel()
         historywindow.title("Gesture History")
         historywindow.geometry("300x200")
 
-        text = Text(historywindow, height=6, width=30)
+        text = Text(historywindow, height=6, width=30, state=NORMAL)
         text.pack(padx=10, pady=10)
         reversedlist = gesturehistorylist[::-1]
         for i, item in enumerate(reversedlist):
             text.insert(END, str(i + 1) + " " + item + "\n")  # makes it so the item is put in the next line
 
+        text.config(state=DISABLED)
         # the value at number 1 is the oldest gestuer and number 5 is the newest gesture
 
 
