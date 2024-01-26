@@ -217,11 +217,7 @@ def WhichGesture(scrollspeed, option):
 
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
-                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddist):
-    global prevLocX
-    global prevLocY
-    global curLocY
-    global curLocX
+                 xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, distfornormalclick, distfordragclick):
     global normalclick
     global rightclick
     global dragclick
@@ -242,7 +238,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         prevLocX, prevLocY = curLocX, curLocY
 
         if statusgesture == "pointer":
-            if distanceofthumbandindex < calibrateddist and not normalclick:  # if distance is less than a certain number
+            if distanceofthumbandindex < distfornormalclick and not normalclick:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                 normalclickcount += 1
                 normalclick = True
@@ -254,7 +250,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
             else:
                 normalclick = False
         elif statusgesture == "drag click":
-            if distance < calibrateddist and not normalclick:
+            if distance < distfordragclick and not normalclick:
                 normalclickcount += 1
                 normalclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
@@ -269,14 +265,12 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed
 
-
-
-        x               nyb8ybibiuiuhiuh                # to mouse library
+         # to mouse library
         prevLocX, prevLocY = curLocX, curLocY
         normalclickcount = 0
         # print(distance)
         if statusgesture == "pointer":
-            if distanceofthumbandindex < calibrateddist:  # if distance is less than a certain number
+            if distanceofthumbandindex < distfornormalclick:  # if distance is less than a certain number
                 # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                 dragclick = True
                 mouse.press(button='left')
@@ -286,7 +280,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     mouse.release(button='left')
                     dragclick = False
         elif statusgesture == "indexandmiddle":
-            if distance < calibrateddist:
+            if distance < distfordragclick:
                 dragclick = True  # makes it so that it won't always do the mouse.release function
                 # changed the libraryand it is much smoother now
                 mouse.press(button='left')  # holds the mouse down
@@ -311,7 +305,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     gesturehistoryqueue = CircularGestureQueue(6)
     pTime = 0  # need for frame rate
-    calibrateddistance = 30
+    calibrateddistancefordragclick = 30
+    calibrateddistancefornormalclick = 30
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
@@ -371,7 +366,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             gesturehistoryqueue.add_gesture(pointergestureoption)
 
                         WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
-                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddistance)
+                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick)
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
@@ -383,7 +379,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         if gesturehistoryqueue.previousgesture != indexandmiddleoption:
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
                         WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
-                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, calibrateddistance)
+                                     xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick)
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -432,7 +429,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                                 gesturehistoryqueue.add_gesture(pointdownoption)
                             WhichGesture(scrollspeed, pointdownoption)
                         elif whichhandgesture == 2:
-                            calibrateddistance = int(CalulateHandSize(landmark_list) * 0.18)
+                            handsize = CalulateHandSize(landmark_list)
+                            calibrateddistancefornormalclick = int(handsize * 1.48)
+                            calibrateddistancefordragclick = int(handsize * 0.18)
 
                         # print(np.argmax(np.squeeze(prediction)))
 
