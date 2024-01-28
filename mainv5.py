@@ -789,10 +789,20 @@ class InstructionsWindow:
         instructionsWindow.title("Instructions")
         instructionsWindow.geometry("700x500")
         instructionsframe = Frame(instructionsWindow)
+        pointerimage = PhotoImage(file="Photos/pointer.jpg")
 
         # add another text widget and make the state disabled. insert all of the text needed
-        instructionstextwidget = Text(instructionsframe, height=20, width=200)
+        instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Comic Sans MS", 10, "bold"))
         instructionstextwidget.pack()
+
+        instructionstextwidget.insert(END, "1. Press start button to start the capture. Press Stop to stop the capture \n")
+        instructionstextwidget.insert(END, "2. Show your hand to the camera \n")
+        instructionstextwidget.insert(END, "3. To calibrate the software, show an open hand to the camera \n")
+        instructionstextwidget.insert(END, "4. To move the mouse, put your thumb, index and middle finger up "
+                                           "(shown in the image), it can be in any orientation, just needs to"
+                                           "point up \n")
+        instructionstextwidget.image_create(END, image=pointerimage)
+
         # store text in a separate text file or variable
         label1 = Label(instructionsframe, text="Instructions here")
         label1.pack(padx=10, pady=10)
