@@ -466,10 +466,14 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 # find a way to stop showing the video wihtout having to release cap
 
 # ---------------- GUI ---------------------------------
-class Main:
+class Main():
     def __init__(self, main):
         with open('settings.json', 'r') as f:
             config = json.load(f)
+
+        main.configure(bg=backgroundcolor)
+        main.title("Hand Gesture Application")
+        main.geometry("700x500")
 
         self.sensitivtyinput = config['sensitivity']
         self.smoothnessinput = config['smoothness']
@@ -486,6 +490,7 @@ class Main:
         StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
                              command=self.Start)
         StartButton.grid(row=0, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
+        main.bind('o', lambda event: self.Start()) # start the program without having to use the mouse
 
         StopButton = Button(buttonframe, text="Stop", padx=20, pady=10, bg=buttoncolor, fg=textcolor, command=self.Stop)
         StopButton.grid(row=1, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
@@ -521,6 +526,7 @@ class Main:
         DefaultSettingsButton.grid(row=3, column=0, sticky=W + E, padx=10, pady=10)
 
         settingsFrame.grid(row=0, column=1)
+
 
     def DefaultSettings(self):
         config = {"sensitivity": 1, "smoothness": 4,
@@ -787,6 +793,9 @@ class InstructionsWindow:
     def __init__(self):
         global pointerimage # needs to be a global variable for some reason otherwise it won't show up. Garbage thing of tkinter
         global holdclickimage
+        global rightclickimage
+        global scrollupimage
+        global scrolldownimage
         # gets confused so you always have to make it global. no way around it
         instructionsWindow = Toplevel()
         instructionsWindow.title("Instructions")
@@ -799,6 +808,15 @@ class InstructionsWindow:
 
         holdclickimage = Image.open("Photos/dragclick.png").resize((100, 150))
         holdclickimage = ImageTk.PhotoImage(holdclickimage)
+
+        rightclickimage = Image.open("Photos/rightclick.png").resize((100, 150))
+        rightclickimage = ImageTk.PhotoImage(rightclickimage)
+
+        scrollupimage = Image.open("Photos/scroll up.png").resize((100, 150))
+        scrollupimage = ImageTk.PhotoImage(scrollupimage)
+
+        scrolldownimage = Image.open("Photos/scrolldown.png").resize((100, 150))
+        scrolldownimage = ImageTk.PhotoImage(scrolldownimage)
 
 
         # add another text widget and make the state disabled. insert all of the text needed
@@ -817,11 +835,14 @@ class InstructionsWindow:
                                            "be done in any oreientation. Make sure the middle finger is apart when you do not want to "
                                            "click\n2. To perform HOLD CLICK, bring in the middle finger to your index finger\n")
         instructionstextwidget.image_create(END, image=holdclickimage)
+        instructionstextwidget.insert(END, "\nRIGHT CLICK: \nTo perform a right click, put your thumb, index and little finger up. Can be in any orientation\n\n")
+        instructionstextwidget.image_create(END, image=rightclickimage)
+        instructionstextwidget.insert(END, "\nSCROLLING:\nShow this gesture to SCROLL UP (can be in any orientation)\n")
+        instructionstextwidget.image_create(END, image=scrollupimage)
+        instructionstextwidget.insert(END, "\n\nShow this gesture to SCROLL DOWN (can be in any orientation)\n")
+        instructionstextwidget.image_create(END, image=scrolldownimage)
+        # how to use the settings pages in the UI
 
-
-        # store text in a separate text file or variable
-        label1 = Label(instructionsframe, text="Instructions here")
-        label1.pack(padx=10, pady=10)
         # more photos of the gestures here to explain how to use the program
 
         instructionsframe.pack()
@@ -880,8 +901,7 @@ class CircularGestureQueue:  # first in first out
 
 
 root = Tk()
-root.configure(bg=backgroundcolor)
-root.title("Hand Gesture Application")
-root.geometry("700x500")
+
 MainWindow = Main(root) # starts here
+# root.bind('o', MainWindow.Start())
 root.mainloop()
