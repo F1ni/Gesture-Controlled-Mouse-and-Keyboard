@@ -612,7 +612,7 @@ class GestureSettingsWindow:
         pointerlabel = Label(gestureframe1, text="Gesture 1")
         pointerlabel.grid(row=0, column=0, padx=10, pady=10)
         # show image
-        pointerimage = Image.open("Photos/pointer.jpg").resize((150, 155))
+        pointerimage = Image.open("Photos/pointer.png").resize((150, 155))
         pointerimageTK = ImageTk.PhotoImage(pointerimage)
         pointerimagelabel = Label(gestureframe1, image=pointerimageTK)
         pointerimagelabel.grid(row=1, column=0)
@@ -631,7 +631,7 @@ class GestureSettingsWindow:
         dragclicklabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
-        dragclickimage = Image.open("Photos/dragclick.jpg").resize((150, 155))
+        dragclickimage = Image.open("Photos/dragclick.png").resize((150, 155))
         dragclickimageTk = ImageTk.PhotoImage(dragclickimage)
         dragclickimagelabel = Label(gestureframe2, image=dragclickimageTk)
         dragclickimagelabel.grid(row=1, column=0)
@@ -651,7 +651,7 @@ class GestureSettingsWindow:
         rightclicklabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
-        rightclickimage = Image.open("Photos/rightclick.jpg").resize((150, 155))
+        rightclickimage = Image.open("Photos/rightclick.png").resize((150, 155))
         rightclickimageTk = ImageTk.PhotoImage(rightclickimage)
         rightclickimagelabel = Label(gestureframe3, image=rightclickimageTk)
         rightclickimagelabel.grid(row=1, column=0)
@@ -671,7 +671,7 @@ class GestureSettingsWindow:
         scrolluplabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
-        scrollupimage = Image.open("Photos/scroll up.jpg").resize((150, 155))
+        scrollupimage = Image.open("Photos/scroll up.png").resize((150, 155))
         scrollupimageTk = ImageTk.PhotoImage(scrollupimage)
         scrollupimagelabel = Label(gestureframe4, image=scrollupimageTk)
         scrollupimagelabel.grid(row=1, column=0)
@@ -691,7 +691,7 @@ class GestureSettingsWindow:
         scrolldownlabel.grid(row=0, column=0, padx=10, pady=10)
 
         # show image
-        scrolldownimage = Image.open("Photos/scrolldown.jpg").resize((150, 155))
+        scrolldownimage = Image.open("Photos/scrolldown.png").resize((150, 155))
         scrolldownimageTk = ImageTk.PhotoImage(scrolldownimage)
         scrolldownimagelabel = Label(gestureframe5, image=scrolldownimageTk)
         scrolldownimagelabel.grid(row=1, column=0)
@@ -744,7 +744,7 @@ class MouseSettingsWindow:
         self.sensitivityslider.set(sensitivtyvalue)
         self.sensitivityslider.pack()
 
-        sensitvityframe.grid(row=1, column=0, columnspkan=2, sticky='ew', padx=10, pady=10)
+        sensitvityframe.grid(row=1, column=0, columnspan=2, sticky='ew', padx=10, pady=10)
 
         # SMOOTHNESS FRAME ----------------------------------------------------------------------------
         smoothnessframe = Frame(mousesettingswindow)
@@ -785,23 +785,39 @@ class MouseSettingsWindow:
 
 class InstructionsWindow:
     def __init__(self):
+        global pointerimage # needs to be a global variable for some reason otherwise it won't show up. Garbage thing of tkinter
+        global holdclickimage
+        # gets confused so you always have to make it global. no way around it
         instructionsWindow = Toplevel()
         instructionsWindow.title("Instructions")
         instructionsWindow.geometry("700x500")
         instructionsframe = Frame(instructionsWindow)
-        pointerimage = PhotoImage(file="Photos/pointer.jpg")
+
+        # https://www.tutorialspoint.com/resizing-images-with-imagetk-photoimage-with-tkinter
+        pointerimage = Image.open("Photos/pointer.png").resize((100, 150))
+        pointerimage = ImageTk.PhotoImage(pointerimage)
+
+        holdclickimage = Image.open("Photos/dragclick.png").resize((100, 150))
+        holdclickimage = ImageTk.PhotoImage(holdclickimage)
+
 
         # add another text widget and make the state disabled. insert all of the text needed
         instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Comic Sans MS", 10, "bold"))
         instructionstextwidget.pack()
 
-        instructionstextwidget.insert(END, "1. Press start button to start the capture. Press Stop to stop the capture \n")
-        instructionstextwidget.insert(END, "2. Show your hand to the camera \n")
-        instructionstextwidget.insert(END, "3. To calibrate the software, show an open hand to the camera \n")
-        instructionstextwidget.insert(END, "4. To move the mouse, put your thumb, index and middle finger up "
+        instructionstextwidget.insert(END, "1. Press start button to start the capture. Press Stop to stop the capture \n"
+                                           "2. Show your hand to the camera \n"
+                                           "3. To calibrate the software, show an open hand to the camera. This is needed when you have the changed "
+                                           "your distance from the camera \n\nMove Mouse and LEFT CLICK:\n1. To move the mouse, put your thumb and index finger up "
                                            "(shown in the image), it can be in any orientation, just needs to"
-                                           "point up \n")
+                                           "point up \n2. To peform a LEFT CLICK, bring the thumb closer to the index finger, like shown in the picture \n"
+                                           "3. Make sure to bring the thumb away from the index finger, to be able to click again \n")
         instructionstextwidget.image_create(END, image=pointerimage)
+        instructionstextwidget.insert(END, "\n\nMove mouse and HOLD CLICK:\n1. To move the mouse, put your thumb, index and middle finger up. Can"
+                                           "be done in any oreientation. Make sure the middle finger is apart when you do not want to "
+                                           "click\n2. To perform HOLD CLICK, bring in the middle finger to your index finger\n")
+        instructionstextwidget.image_create(END, image=holdclickimage)
+
 
         # store text in a separate text file or variable
         label1 = Label(instructionsframe, text="Instructions here")
@@ -867,5 +883,5 @@ root = Tk()
 root.configure(bg=backgroundcolor)
 root.title("Hand Gesture Application")
 root.geometry("700x500")
-MainWindow = Main(root)
+MainWindow = Main(root) # starts here
 root.mainloop()
