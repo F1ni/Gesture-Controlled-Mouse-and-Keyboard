@@ -466,11 +466,11 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 # find a way to stop showing the video wihtout having to release cap
 
 # ---------------- GUI ---------------------------------
-class Main():
+class Main:
     def __init__(self, main):
         with open('settings.json', 'r') as f:
             config = json.load(f)
-
+        self.root = main
         main.configure(bg=backgroundcolor)
         main.title("Hand Gesture Application")
         main.geometry("700x500")
@@ -573,12 +573,12 @@ class Main():
         self.thread2.join()
 
     def OpenGestureSettingsWindow(self):
-        gesturesettingsWindow = GestureSettingsWindow(self.UpdateGestureSettings, self.pointeroption,
+        gesturesettingsWindow = GestureSettingsWindow(self.root, self.pointeroption,
                                                       self.dragclickoption, self.scrollupoption, self.scrolldownoption)
 
     def OpenMouseSettingsWindow(self):
-        mousesettingsWindow = MouseSettingsWindow(self.UpdateMouseSettings, self.sensitivtyinput, self.smoothnessinput,
-                                                  self.scrollinginput)
+        mousesettingsWindow = MouseSettingsWindow(self.sensitivtyinput, self.smoothnessinput,
+                                                  self.scrollinginput, self.root)
 
     def OpenInstructionsWindow(self):
         instructionsWindow = InstructionsWindow()
@@ -586,31 +586,32 @@ class Main():
     def OpenGestureHistoryWindow(self):
         gesturehistorywindow = GestureHistoryWindow()
 
-    def UpdateMouseSettings(self, sensitivtyinput, smoothnessinput, scrollinginput):
-        self.sensitivtyinput = sensitivtyinput
-        self.smoothnessinput = smoothnessinput
-        self.scrollinginput = scrollinginput
+    # def UpdateMouseSettings(self, sensitivtyinput, smoothnessinput, scrollinginput):
+    #     self.sensitivtyinput = sensitivtyinput
+    #     self.smoothnessinput = smoothnessinput
+    #     self.scrollinginput = scrollinginput
 
-    def UpdateGestureSettings(self, option1, option2, option4, option5):
-        self.pointeroption = option1
-        self.dragclickoption = option2
-        self.scrollupoption = option4
-        self.scrolldownoption = option5
-        print(option1, option2, option4, option5)
-        print(self.pointeroption, self.dragclickoption, self.scrollupoption, self.scrolldownoption)
+    # def UpdateGestureSettings(self, option1, option2, option4, option5):
+    #     self.pointeroption = option1
+    #     self.dragclickoption = option2
+    #     self.scrollupoption = option4
+    #     self.scrolldownoption = option5
+    #     print(option1, option2, option4, option5)
+    #     print(self.pointeroption, self.dragclickoption, self.scrollupoption, self.scrolldownoption)
 
 
-class GestureSettingsWindow:
-    def __init__(self, function, pointeroption, dragclickoption, scrollupoption, scrolldownoption):
+class GestureSettingsWindow(Main):
+    def __init__(self, main, pointeroption, dragclickoption, scrollupoption, scrolldownoption):
         global pointerimage
         global dragclickimage
         global rightclickimage
         global scrollupimage
         global scrolldownimage
-
+        Main.__init__(self, main)
+        # needs to be done otherwise it doesnt show because of tkinter garbage collection
         gesturesettingswindow = Toplevel(bg=backgroundcolor)
         gesturesettingswindow.title("Gesture Settings")
-        self.updategesturessettings = function
+        # self.updategesturessettings = function
         gesturesettingswindow.geometry("700x500")
 
         # frame 1 -------------------------------------------------------------
@@ -719,21 +720,27 @@ class GestureSettingsWindow:
     def Back(self, window):
         # submitting data back to main menu screen
         # print(self.option1.get(), self.option2.get(), self.option3.get(), self.option4.get(),
+        #                             self.option5.get()
+        self.pointeroption = self.option1.get()
+        self.dragclickoption = self.option2.get()
+        self.scrollupoption = self.option4.get()
+        self.scrolldownoption = self.option5.get()
+
+        # self.updategesturessettings(self.option1.get(), self.option2.get(), self.option4.get(),
         #                             self.option5.get())
-        self.updategesturessettings(self.option1.get(), self.option2.get(), self.option4.get(),
-                                    self.option5.get())
         window.destroy()
 
     def returnindex(self, list, word):
         return list.index(word)
 
 
-class MouseSettingsWindow:
-    def __init__(self, updatefunction, sensitivtyvalue, smoothnessvalue, scrollingvalue):
+class MouseSettingsWindow(Main):
+    def __init__(self, sensitivtyvalue, smoothnessvalue, scrollingvalue, main):
+        Main.__init__(self, main)
         mousesettingswindow = Toplevel(bg=backgroundcolor)
         mousesettingswindow.geometry("700x500")
         mousesettingswindow.title("Mouse Settings")
-        self.updatemousesettingsfunction = updatefunction
+        # self.updatemousesettingsfunction = updatefunction
 
         # Title
         titleLabel = Label(mousesettingswindow, text="Mouse Settings", font=10, bg=backgroundcolor)
@@ -784,8 +791,9 @@ class MouseSettingsWindow:
 
     def Back(self, window):
         # submitting data back through main menu screen
-        self.updatemousesettingsfunction(self.sensitivityslider.get(), self.smoothSlider.get(),
-                                         self.scrollSlider.get())
+        self.sensitivtyinput = self.sensitivityslider.get()
+        self.smoothnessinput = self.smoothSlider.get()
+        self.scrollinginput = self.scrollSlider.get()
         window.destroy()
 
 
@@ -820,7 +828,7 @@ class InstructionsWindow:
 
 
         # add another text widget and make the state disabled. insert all of the text needed
-        instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Comic Sans MS", 10, "bold"))
+        instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Helvetica", 10, "bold"))
         instructionstextwidget.pack()
 
         instructionstextwidget.insert(END, "OVERALL USAGE: \n1. Press start button to start the capture. Press Stop to stop the capture \n"
@@ -844,9 +852,9 @@ class InstructionsWindow:
         instructionstextwidget.image_create(END, image=scrollupimage)
         instructionstextwidget.insert(END, "\n\nShow this gesture to SCROLL DOWN (can be in any orientation)\n")
         instructionstextwidget.image_create(END, image=scrolldownimage)
-        instructionstextwidget.insert(END, "\n\nVIEW GESTURE HISTORY PAGE: \n\n1. To view the previous 5 gestures that you have used"
+        instructionstextwidget.insert(END, "\n\nVIEW GESTURE HISTORY PAGE: \n1. To view the previous 5 gestures that you have used"
                                            "go to the gesture history window. The gesture at the top of the list is the most recent one."
-                                           "\nGESTURE SETTINGS WINDOW: \nIf you want to change the function that"
+                                           "\n\nGESTURE SETTINGS WINDOW: \nIf you want to change the function that"
                                            "the gesture does, go to this window and choose an option from the dropdown. Press back and then restart"
                                            "the capture\n\nMOUSE SETTINGS WINDOW:\nIn this window you can change the sensitivity, smoothness or scrolling speed."
                                            "After you are happy with the changes, press the BACK button and relaunch the capture\n\nDEFAULT SETTINGS BUTTON:"
