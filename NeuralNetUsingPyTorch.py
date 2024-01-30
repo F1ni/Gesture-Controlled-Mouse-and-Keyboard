@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset, random_split
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from sklearn.model_selection import train_test_split
 
@@ -11,19 +9,19 @@ torch.manual_seed(5)
 
 # Load dataset
 dataset_path = "Model/gestures.csv"
-number_of_gestures = 6
+number_of_gestures = 4
 
 X_dataset = np.loadtxt(dataset_path, delimiter=',', dtype='float32', usecols=(range(1, 43)))
-y_dataset = np.loadtxt(dataset_path, delimiter=',', dtype='int32', usecols=0)
+y_dataset = np.loadtxt(dataset_path, delimiter=',', dtype='int64', usecols=0)
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X_dataset, y_dataset, train_size=0.75, random_state=5)
 
 # Convert data to PyTorch tensors
 X_train = torch.tensor(X_train)
-y_train = torch.tensor(y_train)
+y_train = torch.tensor(y_train, dtype=torch.long)
 X_test = torch.tensor(X_test)
-y_test = torch.tensor(y_test)
+y_test = torch.tensor(y_test, dtype=torch.long)
 
 # Create a PyTorch model
 class GestureModel(nn.Module):
@@ -55,6 +53,8 @@ optimizer = optim.Adam(model.parameters())
 epochs = 1000
 batch_size = 4
 
+val_losses = []  # Initialize val_losses list
+
 for epoch in range(epochs):
     # Training
     model.train()
@@ -78,6 +78,12 @@ for epoch in range(epochs):
         print("Early stopping.")
         break
 
-# Save the trained model
-torch.save(model.state_dict(), "Model/model.pth")
+    val_losses.append(val_loss.item())  # Append val_loss to val_losses list
 
+# Save the trained model only if early stopping is not triggered
+if epoch <= 1000:
+    model_save_path = (r"C:\Users\sanju\PycharmProjects\Mouse-AI-With-Gestures-NEA-v2\ModelTorch")
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model saved to {model_save_path}")
+
+# is it cos i created the directory on the laptop instead of the computer?

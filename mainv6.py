@@ -473,7 +473,7 @@ class Main:
         self.root = main
         main.configure(bg=backgroundcolor)
         main.title("Hand Gesture Application")
-        main.geometry("700x500")
+        main.geometry("500x400")
 
         self.sensitivtyinput = config['sensitivity']
         self.smoothnessinput = config['smoothness']
@@ -484,7 +484,7 @@ class Main:
         self.scrolldownoption = config["scroll down"]
 
         self.thread = None
-        self.thread2 = None
+        # self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
 
         StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
@@ -504,28 +504,28 @@ class Main:
 
         GestureHistoryButton.grid(row=3, column=0, padx=10, pady=10, sticky=W + E)
 
-        buttonframe.grid(row=0, column=0, sticky=N + S)
+        buttonframe.grid(row=0, column=0, padx=10, sticky=N + S)
 
         settingsFrame = Frame(main, bg=backgroundcolor)
         GestureSettingsPageButton = Button(settingsFrame, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
                                            command=self.OpenGestureSettingsWindow, padx=20, pady=10)
         GestureSettingsPageButton.grid(row=0, column=0, padx=10, pady=10, sticky=W + E)
 
-        MouseSettingsPageButton = Button(settingsFrame, text="Mouse Settings", bg=buttoncolor, fg=textcolor,
-                                         command=self.OpenMouseSettingsWindow, padx=20, pady=10)
+        MouseSettingsPageButton = Button(settingsFrame, text="Mouse Settings", bg=buttoncolor, fg=textcolor, padx=20, pady=10,
+                                         command=self.OpenMouseSettingsWindow)
 
-        MouseSettingsPageButton.grid(row=1, column=0, padx=10, pady=10, sticky=W + E)
+        MouseSettingsPageButton.grid(row=1, column=0, padx=10, pady=10, sticky=W + E, columnspan=1)
 
         SaveButton = Button(settingsFrame, text='Save Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
                             command=self.SaveSettings)
-        SaveButton.grid(row=2, column=0, sticky=W + E)
+        SaveButton.grid(row=2, column=0, sticky=W + E, columnspan=1)
 
         DefaultSettingsButton = Button(settingsFrame, text='Default Settings', padx=20, pady=10, bg=buttoncolor,
                                        fg=textcolor,
                                        command=self.DefaultSettings)
-        DefaultSettingsButton.grid(row=3, column=0, sticky=W + E, padx=10, pady=10)
+        DefaultSettingsButton.grid(row=3, column=0, sticky='ew', padx=10, pady=10)
 
-        settingsFrame.grid(row=0, column=1)
+        settingsFrame.grid(row=0, column=1, padx=10, sticky='ew')
 
 
     def DefaultSettings(self):
@@ -568,9 +568,9 @@ class Main:
             # self.thread2 = threading.Thread(target=self.UpdateLabel)
             # self.thread2.start()
 
-    def UpdateLabel(self):
-        self.label.config(text="video shown here")
-        self.thread2.join()
+    # def UpdateLabel(self):
+    #     self.label.config(text="video shown here")
+    #     self.thread2.join()
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.root, self.pointeroption,
