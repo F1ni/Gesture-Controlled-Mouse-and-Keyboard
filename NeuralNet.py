@@ -62,9 +62,9 @@ def Train():
 # test the data
 # model = tf.keras.models.load_model(modelsavepath)
 #
-# # Model evaluation
-# val_loss, val_acc = model.evaluate(X_test, y_test, batch_size=4)
-# # Inference test
-# predict_result = model.predict(np.array([X_test[0]]))
-# print(np.squeeze(predict_result))
-# print(np.argmax(np.squeeze(predict_result)))
+# Model evaluation
+val_loss, val_acc = model.evaluate(X_test, y_test, batch_size=4)
+# Inference test
+predict_result = model.predict(np.array([X_test[0]]))
+print(np.squeeze(predict_result))
+print(np.argmax(np.squeeze(predict_result)))

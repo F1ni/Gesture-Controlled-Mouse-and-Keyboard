@@ -23,7 +23,7 @@ mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 # Tensorflow ---------------------------------------------------------------------------------
-model = tf.keras.models.load_model("Model/model")
+# model = tf.keras.models.load_model("Model/model")
 
 # -----Frame Resolution-------------------------------------------------------------------------------------------------------------------
 wCam, hCam = 640, 480
@@ -65,12 +65,18 @@ gesturelistforscrolling = [
     "scroll down"
 ]
 
+# dictionary
+config = {"sensitivity": 1, "smoothness": 4,
+          "scrollingspeed": 4, "pointer": "pointer",
+          "drag click": "drag click", "scroll up": "scroll up",
+          "scroll down": "scroll down"}
+
 # prediction 0 - scroll up
 # prediction 1 - scroll down
 # prediction 2 - open hand
 # prediction 3 - closed hand (fist)
 
-model = GestureModel(input_size=42, num_classes=4)
+pytorchmodel = GestureModel(input_size=42, num_classes=4)
 
 
 
@@ -659,29 +665,32 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         # model will only take in data of type float 32, so had to convert it
                         normalisedLandmarkList = normalisedLandmarkList.reshape(1,
                                                                                 -1)  # -1  is used when you dont know or want
-                        path = "PyTorchModel/model"
-                        model.load_state_dict(torch.load(path))
-                        model.eval()
+                        path = "model.pth"
+                        pytorchmodel.load_state_dict(torch.load(path))
+                        pytorchmodel.eval()
                         input_data = torch.tensor(normalisedLandmarkList, dtype=torch.float32)
-                        output = model(input_data)
-                        print(output)
+                        with torch.no_grad():
+                            output = pytorchmodel(input_data)
+
+                        prediction = torch.argmax(output).item()
+                        print("Prediction: " + str(prediction))
                         # # to explicitly tell the dimension of that axis
                         # prediction = model.predict(normalisedLandmarkList)
                         # # print("prediction: ")
-                        # whichhandgesture = np.argmax(np.squeeze(prediction))
-                        #
-                        # if whichhandgesture == 0:
-                        #     if gesturehistoryqueue.previousgesture != pointupoption:
-                        #         gesturehistoryqueue.add_gesture(pointupoption)
-                        #     WhichGesture(scrollspeed, pointupoption)
-                        # elif whichhandgesture == 1:
-                        #     if gesturehistoryqueue.previousgesture != pointdownoption:
-                        #         gesturehistoryqueue.add_gesture(pointdownoption)
-                        #     WhichGesture(scrollspeed, pointdownoption)
-                        # elif whichhandgesture == 2:
-                        #     handsize = CalulateHandSize(landmark_list)
-                        #     calibrateddistancefornormalclick = int(handsize * 1.28)
-                        #     calibrateddistancefordragclick = int(handsize * 0.3)
+
+
+                        if prediction == 0:
+                            if gesturehistoryqueue.previousgesture != pointupoption:
+                                gesturehistoryqueue.add_gesture(pointupoption)
+                            WhichGesture(scrollspeed, pointupoption)
+                        elif prediction == 1:
+                            if gesturehistoryqueue.previousgesture != pointdownoption:
+                                gesturehistoryqueue.add_gesture(pointdownoption)
+                            WhichGesture(scrollspeed, pointdownoption)
+                        elif prediction == 2:
+                            handsize = CalulateHandSize(landmark_list)
+                            calibrateddistancefornormalclick = int(handsize * 1.28)
+                            calibrateddistancefordragclick = int(handsize * 0.3)
 
                         # print(np.argmax(np.squeeze(prediction)))
 
