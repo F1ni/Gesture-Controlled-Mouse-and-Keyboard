@@ -1,12 +1,12 @@
-# # import json
-# #
-# # config = {"sensitivity": 1, "smoothness": 4,
-# #           "scrollingspeed": 4, "pointer": "pointer",
-# #           "drag click": "drag click", "scroll up": "scroll up",
-# #           "scroll down": "scroll down"}
-# #
-# # with open('settings.json', 'w') as f:
-# #     json.dump(config, f)
+import json
+
+config = {"sensitivity": 1, "smoothness": 4,
+          "scrollingspeed": 4, "pointer": "pointer",
+          "drag click": "drag click", "scroll up": "scroll up",
+          "scroll down": "scroll down", "topviewvalue": 0}
+
+with open('settings.json', 'w') as f:
+    json.dump(config, f)
 # class CircularGestureQueue: # first in first out
 #     def __init__(self, max_size):
 #         self.max_size = max_size
@@ -49,14 +49,14 @@
 #     print(queue.front, queue.rear)
 #
 
-def test(value):
-    print(value+1)
-    return value + 1
-
-def main():
-    value = 1
-    print(value)
-    value = test(value)
-    print(value)
-
-main()
+# def test(value):
+#     print(value+1)
+#     return value + 1
+#
+# def main():
+#     value = 1
+#     print(value)
+#     value = test(value)
+#     print(value)
+#
+# main()

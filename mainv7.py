@@ -8,7 +8,6 @@ import numpy as np
 import pyautogui
 import json
 import time
-import tensorflow as tf
 import csv
 # gui libraries -------------------------------------------------------
 from tkinter import *
@@ -16,14 +15,11 @@ from tkinter import *
 import torch
 from PIL import Image, ImageTk
 import threading
-from NeuralNet import Train
 from NeuralNetUsingPyTorch import GestureModel
 # -----Mediapipe variables---------------------------------------------------------------------------------------------------------------------
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
-# Tensorflow ---------------------------------------------------------------------------------
-# model = tf.keras.models.load_model("Model/model")
 
 # -----Frame Resolution-------------------------------------------------------------------------------------------------------------------
 wCam, hCam = 640, 480
@@ -69,7 +65,7 @@ gesturelistforscrolling = [
 config = {"sensitivity": 1, "smoothness": 4,
           "scrollingspeed": 4, "pointer": "pointer",
           "drag click": "drag click", "scroll up": "scroll up",
-          "scroll down": "scroll down"}
+          "scroll down": "scroll down", "topviewvalue": 0}
 
 # prediction 0 - scroll up
 # prediction 1 - scroll down
@@ -98,7 +94,9 @@ class Main:
         self.dragclickoption = config["drag click"]
         self.scrollupoption = config["scroll up"]
         self.scrolldownoption = config["scroll down"]
-
+        self.topviewcameravariable = IntVar()
+        val = config["topviewvalue"]
+        self.topviewcameravariable.set(val)
         self.thread = None
         # self.thread2 = None
         buttonframe = Frame(main, bg=backgroundcolor)
@@ -141,6 +139,10 @@ class Main:
                                        command=self.DefaultSettings)
         DefaultSettingsButton.grid(row=3, column=0, sticky='ew', padx=10, pady=10)
 
+
+        topViewCamera = Checkbutton(settingsFrame, text="Top View Camera?", variable=self.topviewcameravariable, onvalue=1, offvalue=0)
+        topViewCamera.grid(row=4, column=0, padx=10, pady=10)
+
         settingsFrame.grid(row=0, column=1, padx=10, sticky='ew')
 
 
@@ -148,7 +150,7 @@ class Main:
         config = {"sensitivity": 1, "smoothness": 4,
                   "scrollingspeed": 4, "pointer": "pointer",
                   "drag click": "drag click", "scroll up": "scroll up",
-                  "scroll down": "scroll down"}
+                  "scroll down": "scroll down", "topviewvalue": 0}
         with open('settings.json', 'w') as f:
             json.dump(config, f)
 
@@ -162,6 +164,8 @@ class Main:
         config["drag click"] = self.dragclickoption
         config["scroll up"] = self.scrollupoption
         config["scroll down"] = self.scrolldownoption
+        val = self.topviewcameravariable.get()
+        config["topviewvalue"] = self.topviewcameravariable.get()
         with open('settings.json', 'w') as f:
             json.dump(config, f)
 
@@ -172,7 +176,8 @@ class Main:
             self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
                                                                        , self.scrollinginput, self.pointeroption,
                                                                        self.dragclickoption
-                                                                       , self.scrollupoption, self.scrolldownoption))
+                                                                       , self.scrollupoption, self.scrolldownoption,
+                                                                       self.topviewcameravariable.get()))
             self.thread.start()
 
     def Stop(self):
@@ -335,15 +340,12 @@ class GestureSettingsWindow(Main):
 
     def Back(self, window):
         # submitting data back to main menu screen
-        # print(self.option1.get(), self.option2.get(), self.option3.get(), self.option4.get(),
-        #                             self.option5.get()
+
         self.pointeroption = self.option1.get()
         self.dragclickoption = self.option2.get()
         self.scrollupoption = self.option4.get()
         self.scrolldownoption = self.option5.get()
 
-        # self.updategesturessettings(self.option1.get(), self.option2.get(), self.option4.get(),
-        #                             self.option5.get())
         window.destroy()
 
     def returnindex(self, list, word):
@@ -407,6 +409,7 @@ class MouseSettingsWindow(Main):
 
     def Back(self, window):
         # submitting data back through main menu screen
+        # these are inherited from the main class
         self.sensitivtyinput = self.sensitivityslider.get()
         self.smoothnessinput = self.smoothSlider.get()
         self.scrollinginput = self.scrollSlider.get()
@@ -537,7 +540,7 @@ class CircularGestureQueue:  # first in first out
 
 
 def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption,
-                 pointdownoption):
+                 pointdownoption, topviewcamerabool):
     global mode
     global fingersuplist
     global isStopped
@@ -565,16 +568,19 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             if key == 27:  # esc key
                 break
 
-            if key == 107:  # k
-                mode = 3
-            elif key == 110:  # n
-                mode = 0
-                print(gesturehistoryqueue.get_history())
+            # code to create the dataset
+            # if key == 107:  # k
+            #     mode = 3
+            # elif key == 110:  # n
+            #     mode = 0
+            #     print(gesturehistoryqueue.get_history())
 
             success, img = cap.read()  # reads the video captured and returns two values
-            if not success:  # if there is no image then break out of the loop
+            if not success:  # if there is no image then break out of the loop # error handling
                 break
-            img = cv2.flip(img, 1)  # flips the image
+
+            if topviewcamerabool == 0:
+                img = cv2.flip(img, 1)  # flips the image
             # detection by mediapipe
             img, results = DetectHands(img, hands)
             # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
@@ -602,7 +608,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                     whichhand = whichHand(landmark_list)  # checks which hand is showing
                     fingersuplist = fingersUp(landmark_list, whichhand)
-                    # print(fingersuplist)
+                    print(fingersuplist)
 
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
@@ -674,9 +680,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                         prediction = torch.argmax(output).item()
                         print("Prediction: " + str(prediction))
-                        # # to explicitly tell the dimension of that axis
-                        # prediction = model.predict(normalisedLandmarkList)
-                        # # print("prediction: ")
 
 
                         if prediction == 0:
@@ -692,16 +695,14 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             calibrateddistancefornormalclick = int(handsize * 1.28)
                             calibrateddistancefordragclick = int(handsize * 0.3)
 
-                        # print(np.argmax(np.squeeze(prediction)))
-
                         middlefingerup = False
                     if gesturehistoryqueue.size() != 0:
                         cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear - 1],
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         gesturehistorylist = gesturehistoryqueue.get_history()
-                    # print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick))
-                    print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick))
+                    print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick))
+                    #print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick))
             # frame rate
             cTime = time.time()
             fps = 1 / (cTime - pTime)  # float so make into an int
@@ -727,8 +728,8 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-    # print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
-    print("ditsance between index and middle finger: " + str(distance))
+    print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
+    #print("ditsance between index and middle finger: " + str(distance))
     if nameoffunction == "pointer":
         rightclick = False
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
