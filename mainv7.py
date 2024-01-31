@@ -95,10 +95,9 @@ class Main:
         self.scrollupoption = config["scroll up"]
         self.scrolldownoption = config["scroll down"]
         self.topviewcameravariable = IntVar()
-        val = config["topviewvalue"]
-        self.topviewcameravariable.set(val)
+        self.topviewcameravariable.set(config["topviewvalue"])
         self.thread = None
-        # self.thread2 = None
+
         buttonframe = Frame(main, bg=backgroundcolor)
 
         StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
@@ -164,7 +163,6 @@ class Main:
         config["drag click"] = self.dragclickoption
         config["scroll up"] = self.scrollupoption
         config["scroll down"] = self.scrolldownoption
-        val = self.topviewcameravariable.get()
         config["topviewvalue"] = self.topviewcameravariable.get()
         with open('settings.json', 'w') as f:
             json.dump(config, f)
@@ -206,19 +204,6 @@ class Main:
 
     def OpenGestureHistoryWindow(self):
         gesturehistorywindow = GestureHistoryWindow()
-
-    # def UpdateMouseSettings(self, sensitivtyinput, smoothnessinput, scrollinginput):
-    #     self.sensitivtyinput = sensitivtyinput
-    #     self.smoothnessinput = smoothnessinput
-    #     self.scrollinginput = scrollinginput
-
-    # def UpdateGestureSettings(self, option1, option2, option4, option5):
-    #     self.pointeroption = option1
-    #     self.dragclickoption = option2
-    #     self.scrollupoption = option4
-    #     self.scrolldownoption = option5
-    #     print(option1, option2, option4, option5)
-    #     print(self.pointeroption, self.dragclickoption, self.scrollupoption, self.scrolldownoption)
 
 
 class GestureSettingsWindow(Main):
@@ -583,7 +568,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                 img = cv2.flip(img, 1)  # flips the image
             # detection by mediapipe
             img, results = DetectHands(img, hands)
-            # cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
             # draw hand landmarks
             if results.multi_hand_landmarks:

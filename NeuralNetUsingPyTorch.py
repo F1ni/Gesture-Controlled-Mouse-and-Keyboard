@@ -86,4 +86,5 @@ class GestureModel(nn.Module):
 #     torch.save(model.state_dict(), model_save_path)
 #     print(f"Model saved to {model_save_path}")
 
-# is it cos i created the directory on the laptop instead of the computer?
+# is it cos i created the directory on the laptop instead of the computer? - no it wasnt
+# it was because it needed to be in the file model.pth
