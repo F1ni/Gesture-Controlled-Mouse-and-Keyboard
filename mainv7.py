@@ -15,14 +15,6 @@ import torch
 from PIL import Image, ImageTk
 import threading
 from NeuralNetUsingPyTorch import GestureModel
-# -----Mediapipe variables------------------------------------------------------------------------
-mp_holistic = mp.solutions.holistic
-mp_drawing = mp.solutions.drawing_utils
-mp_hands = mp.solutions.hands
-
-# -----Frame Resolution-------------------------------------------------------------
-wCam, hCam = 640, 480
-frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
 
 # Boolean -----------------------------------------------------------
 dragclick = False
@@ -32,14 +24,9 @@ isStopped = False
 
 # -------------------------------------------------------------------------------------
 normalclickcount = 0
-
-# screen size----------------------------------------------------------------------
-screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
-
+gesturehistorylist = []
 # Used to create the dataset -------------------------------------------------------------
-mode = 0
-# ------------------------------------------------------------------------------------------
-fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
+# mode = 0
 
 # --------------- gui ----------------------------------------------------------------------
 # color variables
@@ -48,31 +35,30 @@ textcolor = "#FFFFFF"
 buttoncolor = "#636363"
 
 # -----------------------------------------------------------------------------------------------
-
-
-gesturelistforscrolling = [
-    "scroll up",
-    "scroll down"
-]
-
+# neural network
 # prediction 0 - scroll up
 # prediction 1 - scroll down
 # prediction 2 - open hand
 # prediction 3 - closed hand (fist)
 
-pytorchmodel = GestureModel(input_size=42, num_classes=4)
+pytorchmodel = GestureModel(input_size=42, num_classes=4) # initialise the pytorch model
 
 # ---------------- GUI ---------------------------------
+# First window that the user sees
 class Main:
     def __init__(self, main):
+        # load settings from the json file
         with open('settings.json', 'r') as f:
-            self.config = json.load(f) # load dictionary of settings
+            self.config = json.load(f)
+
+
         self.root = main
 
-        main.configure(bg=backgroundcolor)
-        main.title("Hand Gesture Application")
-        main.geometry("500x400")
+        main.configure(bg=backgroundcolor) # change colour of background
+        main.title("Hand Gesture Application") # change title
+        main.geometry("425x350") # change width and length
 
+        # assign the variables with their corresponding value in the dictionary we received from the json file
         self.sensitivtyinput = self.config['sensitivity']
         self.smoothnessinput = self.config['smoothness']
         self.scrollinginput = self.config['scrollingspeed']
@@ -82,14 +68,18 @@ class Main:
         self.scrolldownoption = self.config["scroll down"]
         self.topviewcameravariable = IntVar()
         self.topviewcameravariable.set(self.config["topviewvalue"])
+        # set thread to none
         self.thread = None
 
-        buttonframe = Frame(main, bg=backgroundcolor)
-
+        buttonframe = Frame(main, bg=backgroundcolor) # create a frame to keep the widgets organised
+        buttonframe.grid(row=0, column=0, padx=10, sticky=N + S)
+        # initalised and display the widgets onto the gui
         StartButton = Button(buttonframe, text="Start", padx=20, pady=10, bg=buttoncolor, fg=textcolor,
                              command=self.Start)
-        StartButton.grid(row=0, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
-        main.bind('o', lambda event: self.Start()) # start the program without having to use the mouse
+        StartButton.grid(row=0, column=0, columnspan=1, sticky=W + E, padx=10, pady=10) # sticky makes it 'stick' to the edges. W - west, E - east
+
+        # binds the letter 'o' to self.Start() so the user can start the program without having to use the mouse
+        main.bind('o', lambda event: self.Start())
 
         StopButton = Button(buttonframe, text="Stop", padx=20, pady=10, bg=buttoncolor, fg=textcolor, command=self.Stop)
         StopButton.grid(row=1, column=0, columnspan=1, sticky=W + E, padx=10, pady=10)
@@ -100,48 +90,45 @@ class Main:
 
         GestureHistoryButton = Button(buttonframe, text="View Gesture History", padx=20, pady=10, bg=buttoncolor,
                                       fg=textcolor, command=self.OpenGestureHistoryWindow)
-
         GestureHistoryButton.grid(row=3, column=0, padx=10, pady=10, sticky=W + E)
 
-        buttonframe.grid(row=0, column=0, padx=10, sticky=N + S)
-
-        settingsFrame = Frame(main, bg=backgroundcolor)
-        GestureSettingsPageButton = Button(settingsFrame, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
+        GestureSettingsPageButton = Button(buttonframe, text="Gesture Settings", bg=buttoncolor, fg=textcolor,
                                            command=self.OpenGestureSettingsWindow, padx=20, pady=10)
-        GestureSettingsPageButton.grid(row=0, column=0, padx=10, pady=10, sticky=W + E)
+        GestureSettingsPageButton.grid(row=0, column=1, sticky=W + E, columnspan=1)
 
-        MouseSettingsPageButton = Button(settingsFrame, text="Mouse Settings", bg=buttoncolor, fg=textcolor, padx=20, pady=10,
+        MouseSettingsPageButton = Button(buttonframe, text="Mouse Settings", bg=buttoncolor, fg=textcolor, padx=20,
+                                         pady=10,
                                          command=self.OpenMouseSettingsWindow)
+        MouseSettingsPageButton.grid(row=1, column=1, sticky=W + E, columnspan=1)
 
-        MouseSettingsPageButton.grid(row=1, column=0, padx=10, pady=10, sticky=W + E, columnspan=1)
-
-        SaveButton = Button(settingsFrame, text='Save Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
+        SaveButton = Button(buttonframe, text='Save Settings', padx=20, pady=10, bg=buttoncolor, fg=textcolor,
                             command=self.SaveSettings)
-        SaveButton.grid(row=2, column=0, sticky=W + E, columnspan=1)
+        SaveButton.grid(row=2, column=1, sticky=W + E, columnspan=1)
 
-        DefaultSettingsButton = Button(settingsFrame, text='Default Settings', padx=20, pady=10, bg=buttoncolor,
-                                       fg=textcolor,
-                                       command=self.DefaultSettings)
-        DefaultSettingsButton.grid(row=3, column=0, sticky='ew', padx=10, pady=10)
+        DefaultSettingsButton = Button(buttonframe, text='Default Settings', padx=20, pady=10, bg=buttoncolor,
+                                       fg=textcolor, command=self.DefaultSettings)
+        DefaultSettingsButton.grid(row=3, column=1, sticky=W + E, columnspan=1)
 
-
-        topViewCamera = Checkbutton(settingsFrame, text="Top View Camera?", variable=self.topviewcameravariable, onvalue=1, offvalue=0)
+        # toggle button - value of this Checkbutton is stored in variable 'topviewcameravariable'
+        topViewCamera = Checkbutton(buttonframe, text="Top View Camera?", variable=self.topviewcameravariable,
+                                    onvalue=1, offvalue=0,
+                                    bg=backgroundcolor)
         topViewCamera.grid(row=4, column=0, padx=10, pady=10)
-
-        settingsFrame.grid(row=0, column=1, padx=10, sticky='ew')
 
 
     def DefaultSettings(self):
+        # set config to orginal values
         self.config = {"sensitivity": 1, "smoothness": 4,
                   "scrollingspeed": 2, "pointer": "pointer",
                   "drag click": "drag click", "scroll up": "scroll up",
                   "scroll down": "scroll down", "topviewvalue": 0}
-        with open('settings.json', 'w') as f:
+        with open('settings.json', 'w') as f: # rewrite the json file with these values
             json.dump(self.config, f)
 
     # ----------------------------------------------------------
 
     def SaveSettings(self):
+        # set the new values of the settings in the dictionary
         self.config['sensitivity'] = self.sensitivtyinput
         self.config['smoothness'] = self.smoothnessinput
         self.config['scrollingspeed'] = self.scrollinginput
@@ -150,26 +137,26 @@ class Main:
         self.config["scroll up"] = self.scrollupoption
         self.config["scroll down"] = self.scrolldownoption
         self.config["topviewvalue"] = self.topviewcameravariable.get()
-        with open('settings.json', 'w') as f:
+        with open('settings.json', 'w') as f: # rewrite the json file with these new values
             json.dump(self.config, f)
 
     def Start(self):
         global isStopped
-        if self.thread is None or not self.thread.is_alive():
+        if self.thread is None or not self.thread.is_alive(): # check if the thread empty or if already running
             isStopped = False
             self.thread = threading.Thread(target=lambda: MainFunction(self.sensitivtyinput, self.smoothnessinput
                                                                        , self.scrollinginput, self.pointeroption,
                                                                        self.dragclickoption
                                                                        , self.scrollupoption, self.scrolldownoption,
                                                                        self.topviewcameravariable.get()))
-            self.thread.start()
+            self.thread.start() # run main function
 
     def Stop(self):
         global isStopped
 
-        if self.thread and self.thread.is_alive():
+        if self.thread and self.thread.is_alive(): # checks if thread is not none and if it is running
             isStopped = True
-            self.thread.join()
+            self.thread.join() # stops the thready
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.root, self.pointeroption,
@@ -186,23 +173,29 @@ class Main:
         gesturehistorywindow = GestureHistoryWindow()
 
 
-class GestureSettingsWindow(Main):
+# child class
+class GestureSettingsWindow(Main): # inherit properties from the parent class (Main)
     def __init__(self, main, pointeroption, dragclickoption, scrollupoption, scrolldownoption):
+        # these global variables need to be done due to pythons garbage collection
+        # if it is not done then the images do not show
         global pointerimage
         global dragclickimage
         global rightclickimage
         global scrollupimage
         global scrolldownimage
-        Main.__init__(self, main)
-        # needs to be done otherwise it doesnt show because of tkinter garbage collection
-        gesturesettingswindow = Toplevel(bg=backgroundcolor)
+        Main.__init__(self, main) # way to initialise from the parent class into this one
+
+        gesturesettingswindow = Toplevel(bg=backgroundcolor) # creates a new window on top of the main window
         gesturesettingswindow.title("Gesture Settings")
-        # self.updategesturessettings = function
-        gesturesettingswindow.geometry("700x500")
+        gesturesettingswindow.geometry("750x500") # ("length x width")
 
         self.gesturelistforclicking = ["pointer", "drag click"]
+        self.gesturelistforscrolling = ["scroll up", "scroll down"]
 
+
+        # using frames to structure the widgets, makes it easier to debug as each part is in its own frame
         # frame 1 -------------------------------------------------------------
+
         gestureframe1 = Frame(gesturesettingswindow)
         pointerlabel = Label(gestureframe1, text="Gesture 1")
         pointerlabel.grid(row=0, column=0, padx=10, pady=10)
@@ -211,11 +204,12 @@ class GestureSettingsWindow(Main):
         pointerimageTK = ImageTk.PhotoImage(pointerimage)
         pointerimagelabel = Label(gestureframe1, image=pointerimageTK)
         pointerimagelabel.grid(row=1, column=0)
-        pointerimage.image = pointerimageTK
+        pointerimage.image = pointerimageTK # need to keep a reference to the image due to pythons garbage collection
 
         # dropdown
-        self.option1 = StringVar()
+        self.option1 = StringVar() # the value of the dropdown is stored in this variable
         self.option1.set(self.gesturelistforclicking[self.returnindex(self.gesturelistforclicking, pointeroption)])
+        # set the value of the dropdown to what the user had changed it to before
         dropdown1 = OptionMenu(gestureframe1, self.option1, *self.gesturelistforclicking)
         dropdown1.grid(row=2, column=0)
         gestureframe1.grid(row=0, column=0, padx=10, pady=10)
@@ -230,11 +224,11 @@ class GestureSettingsWindow(Main):
         dragclickimageTk = ImageTk.PhotoImage(dragclickimage)
         dragclickimagelabel = Label(gestureframe2, image=dragclickimageTk)
         dragclickimagelabel.grid(row=1, column=0)
-        dragclickimage.image = dragclickimageTk  # keep a reference to the image or something???
-        # something called garbage collection or something???
+        dragclickimage.image = dragclickimageTk
+
 
         # dropdown
-        self.option2 = StringVar()
+        self.option2 = StringVar() # the value of the dropdown is stored in this variable
         self.option2.set(self.gesturelistforclicking[self.returnindex(self.gesturelistforclicking, dragclickoption)])
         dropdown2 = OptionMenu(gestureframe2, self.option2, *self.gesturelistforclicking)
         dropdown2.grid(row=2, column=0)
@@ -251,12 +245,13 @@ class GestureSettingsWindow(Main):
         rightclickimagelabel = Label(gestureframe3, image=rightclickimageTk)
         rightclickimagelabel.grid(row=1, column=0)
         rightclickimage.image = rightclickimageTk  # keep a reference to the image or something???
-        # something called garbage collection or something???
 
-        # # dropdown
-        self.option3 = StringVar()
+
+        # dropdown
+        self.option3 = StringVar() # the value of the dropdown is stored in this variable
         self.option3.set("Right Click")
         dropdown3 = OptionMenu(gestureframe3, self.option3, "Right Click")
+        # the user is unable to change the function of this gesture so it will always be set as right click
         dropdown3.grid(row=2, column=0)
         gestureframe3.grid(row=0, column=2, padx=10, pady=10)
 
@@ -270,13 +265,12 @@ class GestureSettingsWindow(Main):
         scrollupimageTk = ImageTk.PhotoImage(scrollupimage)
         scrollupimagelabel = Label(gestureframe4, image=scrollupimageTk)
         scrollupimagelabel.grid(row=1, column=0)
-        scrollupimage.image = scrollupimageTk  # keep a reference to the image or something???
-        # something called garbage collection or something???
+        scrollupimage.image = scrollupimageTk
 
         # dropdown
         self.option4 = StringVar()
-        self.option4.set(gesturelistforscrolling[self.returnindex(gesturelistforscrolling, scrollupoption)])
-        dropdown4 = OptionMenu(gestureframe4, self.option4, *gesturelistforscrolling)
+        self.option4.set(self.gesturelistforscrolling[self.returnindex(self.gesturelistforscrolling, scrollupoption)])
+        dropdown4 = OptionMenu(gestureframe4, self.option4, *self.gesturelistforscrolling)
         dropdown4.grid(row=2, column=0)
         gestureframe4.grid(row=0, column=3, padx=10, pady=10)
 
@@ -290,13 +284,12 @@ class GestureSettingsWindow(Main):
         scrolldownimageTk = ImageTk.PhotoImage(scrolldownimage)
         scrolldownimagelabel = Label(gestureframe5, image=scrolldownimageTk)
         scrolldownimagelabel.grid(row=1, column=0)
-        scrolldownimage.image = scrolldownimageTk  # keep a reference to the image or something???
-        # something called garbage collection or something???
+        scrolldownimage.image = scrolldownimageTk
 
         # dropdown
         self.option5 = StringVar()
-        self.option5.set(gesturelistforscrolling[self.returnindex(gesturelistforscrolling, scrolldownoption)])
-        dropdown5 = OptionMenu(gestureframe5, self.option5, *gesturelistforscrolling)
+        self.option5.set(self.gesturelistforscrolling[self.returnindex(self.gesturelistforscrolling, scrolldownoption)])
+        dropdown5 = OptionMenu(gestureframe5, self.option5, *self.gesturelistforscrolling)
         dropdown5.grid(row=2, column=0)
         gestureframe5.grid(row=1, column=0, padx=5, pady=5)
 
@@ -306,26 +299,24 @@ class GestureSettingsWindow(Main):
         backbutton.grid(row=1, column=2)
 
     def Back(self, window):
-        # submitting data back to main menu screen
-
+        # submitting data back to the main menu screen using the variables that were inherited
         self.pointeroption = self.option1.get()
         self.dragclickoption = self.option2.get()
         self.scrollupoption = self.option4.get()
         self.scrolldownoption = self.option5.get()
 
-        window.destroy()
+        window.destroy() # destroys the window
 
     def returnindex(self, list, word):
-        return list.index(word)
+        return list.index(word) # returns the index of where the word is in the list
 
 
 class MouseSettingsWindow(Main):
     def __init__(self, sensitivtyvalue, smoothnessvalue, scrollingvalue, main):
         Main.__init__(self, main)
-        mousesettingswindow = Toplevel(bg=backgroundcolor)
+        mousesettingswindow = Toplevel(bg=backgroundcolor) # creates another window in front of the current one
         mousesettingswindow.geometry("700x500")
         mousesettingswindow.title("Mouse Settings")
-        # self.updatemousesettingsfunction = updatefunction
 
         # Title
         titleLabel = Label(mousesettingswindow, text="Mouse Settings", font=10, bg=backgroundcolor)
@@ -333,13 +324,13 @@ class MouseSettingsWindow(Main):
 
         # SENSTIVITY FRAME
         sensitvityframe = Frame(mousesettingswindow)
-
         sensitivityLabel = Label(sensitvityframe, text="Sensitivity:")
         sensitivityLabel.pack()
 
         # Sensitivity Slider
+        # create slider
         self.sensitivityslider = Scale(sensitvityframe, orient=HORIZONTAL, from_=1, to=10, length=500)
-        self.sensitivityslider.set(sensitivtyvalue)
+        self.sensitivityslider.set(sensitivtyvalue) # set the sensitivity value of slider
         self.sensitivityslider.pack()
 
         sensitvityframe.grid(row=1, column=0, columnspan=2, sticky='ew', padx=10, pady=10)
@@ -367,30 +358,26 @@ class MouseSettingsWindow(Main):
         self.scrollSlider.pack()
         scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
-        # store previsuous value for each and check if they have changed, if they have then add it to the stack
-        # back button
-
         backbutton = Button(mousesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
                             command=lambda: self.Back(mousesettingswindow))
         backbutton.grid(row=4, column=0)
 
     def Back(self, window):
-        # submitting data back through main menu screen
-        # these are inherited from the main class
+        # submitting data back to the main menu screen using the variables that were inherited
         self.sensitivtyinput = self.sensitivityslider.get()
         self.smoothnessinput = self.smoothSlider.get()
         self.scrollinginput = self.scrollSlider.get()
-        window.destroy()
+        window.destroy() # destroys the window
 
 
 class InstructionsWindow:
     def __init__(self):
-        global pointerimage # needs to be a global variable for some reason otherwise it won't show up. Garbage thing of tkinter
+        global pointerimage # needs to be a global variable for some reason otherwise it won't show up. Python garbage collection
         global holdclickimage
         global rightclickimage
         global scrollupimage
         global scrolldownimage
-        # gets confused so you always have to make it global. no way around it
+
         instructionsWindow = Toplevel()
         instructionsWindow.title("Instructions")
         instructionsWindow.geometry("700x500")
@@ -413,10 +400,10 @@ class InstructionsWindow:
         scrolldownimage = ImageTk.PhotoImage(scrolldownimage)
 
 
-        # add another text widget and make the state disabled. insert all of the text needed
+        # initialise the text widget
         instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Helvetica", 10, "bold"))
         instructionstextwidget.pack()
-
+        # insert all of the instructions. \n is used to indicate a line break
         instructionstextwidget.insert(END, "OVERALL USAGE: \n1. Press 'o' or click the start button to start the capture. Click the Stop button or "
                                            "press 'esc' to stop the capture \n"
                                            "2. Show your hand to the camera. NOTE: The pink box represents the whole screen. If you bring your finger to the"
@@ -447,10 +434,7 @@ class InstructionsWindow:
                                            "After you are happy with the changes, press the BACK button and relaunch the capture\n\nDEFAULT SETTINGS BUTTON:"
                                            "\nThe default settings are the values that I think are the most useable. Press this button, to change back"
                                            "to the original settings. Then restart the application")
-
-        # how to use the settings pages in the UI
-
-        # more photos of the gestures here to explain how to use the program
+        instructionstextwidget.config(state=DISABLED) # disable the widget so that you are unable to edit it
 
         instructionsframe.pack()
 
@@ -516,6 +500,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global normalclickcount
     global gesturehistorylist
     middlefingerup = False
+    wCam, hCam = 640, 480
+    frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
+
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
     cap.set(4, hCam)
@@ -527,6 +514,11 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     prevLocX, prevLocY = 0, 0
 
+    # -----Mediapipe variables------------------------------------------------------------------------
+    mp_holistic = mp.solutions.holistic
+    mp_drawing = mp.solutions.drawing_utils
+    mp_hands = mp.solutions.hands
+    fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
 
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
         # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
@@ -566,7 +558,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     # you 42 for each x and y value
                     # this list will be used for the neural network
                     # get tip of index and middle finger
-                    LoggingHandGestures(normalisedLandmarkList)
+                    # LoggingHandGestures(normalisedLandmarkList) - used to log the data for the dataset
                     # landmark coordinates
                     xindex, yindex = landmark_list[8][0], landmark_list[8][1]
                     xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
@@ -590,7 +582,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                         prevLocX, prevLocY = WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
-                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY)
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY, frameR,
+                                                          wCam, hCam)
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
@@ -603,7 +596,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
                         prevLocX, prevLocY = WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
-                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY)
+                                     calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY,
+                                                          frameR, wCam, hCam)
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
                     # if index finger is up and middle two fingers are down
@@ -683,12 +677,12 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
                  xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip, distfornormalclick, distfordragclick,
-                 prevLocX, prevLocY):
+                 prevLocX, prevLocY, frameR, wCam, hCam):
     global normalclick
     global rightclick
     global dragclick
     global normalclickcount
-
+    screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
     distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
@@ -780,8 +774,7 @@ def CalcLandmarkList(image, landmarks):  # algorithm
     return landmark_point
 
 
-def LoggingHandGestures(
-        normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
