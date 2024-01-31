@@ -11,21 +11,18 @@ import time
 import csv
 # gui libraries -------------------------------------------------------
 from tkinter import *
-
 import torch
 from PIL import Image, ImageTk
 import threading
 from NeuralNetUsingPyTorch import GestureModel
-# -----Mediapipe variables---------------------------------------------------------------------------------------------------------------------
+# -----Mediapipe variables------------------------------------------------------------------------
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
-# -----Frame Resolution-------------------------------------------------------------------------------------------------------------------
+# -----Frame Resolution-------------------------------------------------------------
 wCam, hCam = 640, 480
 frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
-
-# -----------------------------------------------------------------------------------------------------------------------------------
 
 # Boolean -----------------------------------------------------------
 dragclick = False
@@ -33,18 +30,18 @@ normalclick = False
 rightclick = False
 isStopped = False
 
-# -----------------------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------
 normalclickcount = 0
-smoothening = 7  # slider for this, might not need this
-# -----------------------------------------------------------------------------------------------------------------------------------
+
+# screen size----------------------------------------------------------------------
 screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
-screencordy = 0
-# -----------------------------------------------------------------------------------------------------------------------------------
+
+# Used to create the dataset -------------------------------------------------------------
 mode = 0
-# -----------------------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
-gesturehistorylist = []
-# --------------- gui -------------------------------------------------------------------------------------------------
+
+# --------------- gui ----------------------------------------------------------------------
 # color variables
 backgroundcolor = "#B4B4B4"
 textcolor = "#FFFFFF"
@@ -52,20 +49,11 @@ buttoncolor = "#636363"
 
 # -----------------------------------------------------------------------------------------------
 
-gesturelistforclicking = [
-    "pointer",
-    "drag click"
-]
+
 gesturelistforscrolling = [
     "scroll up",
     "scroll down"
 ]
-
-# dictionary
-config = {"sensitivity": 1, "smoothness": 4,
-          "scrollingspeed": 4, "pointer": "pointer",
-          "drag click": "drag click", "scroll up": "scroll up",
-          "scroll down": "scroll down", "topviewvalue": 0}
 
 # prediction 0 - scroll up
 # prediction 1 - scroll down
@@ -74,28 +62,26 @@ config = {"sensitivity": 1, "smoothness": 4,
 
 pytorchmodel = GestureModel(input_size=42, num_classes=4)
 
-
-
 # ---------------- GUI ---------------------------------
 class Main:
     def __init__(self, main):
         with open('settings.json', 'r') as f:
-            config = json.load(f)
+            self.config = json.load(f) # load dictionary of settings
         self.root = main
 
         main.configure(bg=backgroundcolor)
         main.title("Hand Gesture Application")
         main.geometry("500x400")
 
-        self.sensitivtyinput = config['sensitivity']
-        self.smoothnessinput = config['smoothness']
-        self.scrollinginput = config['scrollingspeed']
-        self.pointeroption = config["pointer"]
-        self.dragclickoption = config["drag click"]
-        self.scrollupoption = config["scroll up"]
-        self.scrolldownoption = config["scroll down"]
+        self.sensitivtyinput = self.config['sensitivity']
+        self.smoothnessinput = self.config['smoothness']
+        self.scrollinginput = self.config['scrollingspeed']
+        self.pointeroption = self.config["pointer"]
+        self.dragclickoption = self.config["drag click"]
+        self.scrollupoption = self.config["scroll up"]
+        self.scrolldownoption = self.config["scroll down"]
         self.topviewcameravariable = IntVar()
-        self.topviewcameravariable.set(config["topviewvalue"])
+        self.topviewcameravariable.set(self.config["topviewvalue"])
         self.thread = None
 
         buttonframe = Frame(main, bg=backgroundcolor)
@@ -146,26 +132,26 @@ class Main:
 
 
     def DefaultSettings(self):
-        config = {"sensitivity": 1, "smoothness": 4,
-                  "scrollingspeed": 4, "pointer": "pointer",
+        self.config = {"sensitivity": 1, "smoothness": 4,
+                  "scrollingspeed": 2, "pointer": "pointer",
                   "drag click": "drag click", "scroll up": "scroll up",
                   "scroll down": "scroll down", "topviewvalue": 0}
         with open('settings.json', 'w') as f:
-            json.dump(config, f)
+            json.dump(self.config, f)
 
     # ----------------------------------------------------------
 
     def SaveSettings(self):
-        config['sensitivity'] = self.sensitivtyinput
-        config['smoothness'] = self.smoothnessinput
-        config['scrollingspeed'] = self.scrollinginput
-        config["pointer"] = self.pointeroption
-        config["drag click"] = self.dragclickoption
-        config["scroll up"] = self.scrollupoption
-        config["scroll down"] = self.scrolldownoption
-        config["topviewvalue"] = self.topviewcameravariable.get()
+        self.config['sensitivity'] = self.sensitivtyinput
+        self.config['smoothness'] = self.smoothnessinput
+        self.config['scrollingspeed'] = self.scrollinginput
+        self.config["pointer"] = self.pointeroption
+        self.config["drag click"] = self.dragclickoption
+        self.config["scroll up"] = self.scrollupoption
+        self.config["scroll down"] = self.scrolldownoption
+        self.config["topviewvalue"] = self.topviewcameravariable.get()
         with open('settings.json', 'w') as f:
-            json.dump(config, f)
+            json.dump(self.config, f)
 
     def Start(self):
         global isStopped
@@ -184,12 +170,6 @@ class Main:
         if self.thread and self.thread.is_alive():
             isStopped = True
             self.thread.join()
-            # self.thread2 = threading.Thread(target=self.UpdateLabel)
-            # self.thread2.start()
-
-    # def UpdateLabel(self):
-    #     self.label.config(text="video shown here")
-    #     self.thread2.join()
 
     def OpenGestureSettingsWindow(self):
         gesturesettingsWindow = GestureSettingsWindow(self.root, self.pointeroption,
@@ -220,6 +200,8 @@ class GestureSettingsWindow(Main):
         # self.updategesturessettings = function
         gesturesettingswindow.geometry("700x500")
 
+        self.gesturelistforclicking = ["pointer", "drag click"]
+
         # frame 1 -------------------------------------------------------------
         gestureframe1 = Frame(gesturesettingswindow)
         pointerlabel = Label(gestureframe1, text="Gesture 1")
@@ -233,8 +215,8 @@ class GestureSettingsWindow(Main):
 
         # dropdown
         self.option1 = StringVar()
-        self.option1.set(gesturelistforclicking[self.returnindex(gesturelistforclicking, pointeroption)])
-        dropdown1 = OptionMenu(gestureframe1, self.option1, *gesturelistforclicking)
+        self.option1.set(self.gesturelistforclicking[self.returnindex(self.gesturelistforclicking, pointeroption)])
+        dropdown1 = OptionMenu(gestureframe1, self.option1, *self.gesturelistforclicking)
         dropdown1.grid(row=2, column=0)
         gestureframe1.grid(row=0, column=0, padx=10, pady=10)
 
@@ -253,8 +235,8 @@ class GestureSettingsWindow(Main):
 
         # dropdown
         self.option2 = StringVar()
-        self.option2.set(gesturelistforclicking[self.returnindex(gesturelistforclicking, dragclickoption)])
-        dropdown2 = OptionMenu(gestureframe2, self.option2, *gesturelistforclicking)
+        self.option2.set(self.gesturelistforclicking[self.returnindex(self.gesturelistforclicking, dragclickoption)])
+        dropdown2 = OptionMenu(gestureframe2, self.option2, *self.gesturelistforclicking)
         dropdown2.grid(row=2, column=0)
         gestureframe2.grid(row=0, column=1, padx=10, pady=10)
 
@@ -435,7 +417,8 @@ class InstructionsWindow:
         instructionstextwidget = Text(instructionsframe, height=20, width=200, font=("Helvetica", 10, "bold"))
         instructionstextwidget.pack()
 
-        instructionstextwidget.insert(END, "OVERALL USAGE: \n1. Press start button to start the capture. Press Stop to stop the capture \n"
+        instructionstextwidget.insert(END, "OVERALL USAGE: \n1. Press 'o' or click the start button to start the capture. Click the Stop button or "
+                                           "press 'esc' to stop the capture \n"
                                            "2. Show your hand to the camera. NOTE: The pink box represents the whole screen. If you bring your finger to the"
                                            "corner of the screen, then the mouse will also be at the corner of the screen\n"
                                            "3. To calibrate the software, show an open hand to the camera. This is needed when you have the changed "
@@ -463,7 +446,7 @@ class InstructionsWindow:
                                            "the capture\n\nMOUSE SETTINGS WINDOW:\nIn this window you can change the sensitivity, smoothness or scrolling speed."
                                            "After you are happy with the changes, press the BACK button and relaunch the capture\n\nDEFAULT SETTINGS BUTTON:"
                                            "\nThe default settings are the values that I think are the most useable. Press this button, to change back"
-                                           "to the original settings")
+                                           "to the original settings. Then restart the application")
 
         # how to use the settings pages in the UI
 
