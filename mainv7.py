@@ -153,7 +153,6 @@ class Main:
 
     def Stop(self):
         global isStopped
-
         if self.thread and self.thread.is_alive(): # checks if thread is not none and if it is running
             isStopped = True
             self.thread.join() # stops the thready
@@ -310,7 +309,7 @@ class GestureSettingsWindow(Main): # inherit properties from the parent class (M
     def returnindex(self, list, word):
         return list.index(word) # returns the index of where the word is in the list
 
-
+# child class
 class MouseSettingsWindow(Main):
     def __init__(self, sensitivtyvalue, smoothnessvalue, scrollingvalue, main):
         Main.__init__(self, main)
@@ -448,11 +447,11 @@ class GestureHistoryWindow:
 
         text = Text(historywindow, height=6, width=30, state=NORMAL)
         text.pack(padx=10, pady=10)
-        reversedlist = gesturehistorylist[::-1]
-        for i, item in enumerate(reversedlist):
+        reversedlist = gesturehistorylist[::-1] # reverses the list
+        for i, item in enumerate(reversedlist): # enumerate stores the count the count in i and the item in the list in item
             text.insert(END, str(i + 1) + " " + item + "\n")  # makes it so the item is put in the next line
 
-        text.config(state=DISABLED)
+        text.config(state=DISABLED) # makes it so that the text box is uneditable
         # the value at number 1 is the oldest gestuer and number 5 is the newest gesture
 
 
@@ -460,34 +459,41 @@ class CircularGestureQueue:  # first in first out
     def __init__(self, max_size):
         self.max_size = max_size
         self.gesture_history = [None] * max_size  # intially set to none
-        self.front = 0  # Index of the front element
-        self.rear = 0  # Index where the next element will be inserted
-        self.previousgesture = ""  # used for the history
+        self.front = 0  # index of the front element
+        self.rear = 0  # index where the next element will be inserted
+        self.previousgesture = ""  # used to check if the previous gesture is the same. if not then it will be added
+        # to the gesture history queue
 
     def add_gesture(self, gesture):
         # Check if the queue is full before inserting
         if self.is_full():
-            self.front = (self.front + 1) % self.max_size  # Move the front index in a circular manner
+            self.front = (self.front + 1) % self.max_size  # moves the front index in a circular manner
 
         self.previousgesture = gesture
 
         # when the queue is full the front pointer will move such that the oldest gesture gets replaced by the latest
-        print(self.get_history())
-        self.gesture_history[self.rear] = gesture
-        self.rear = (self.rear + 1) % self.max_size  # Move the rear index in a circular manner
+        self.gesture_history[self.rear] = gesture # gesture is added to the rear of the queue
+        self.rear = (self.rear + 1) % self.max_size  # increases the rear index by 1, then when it reaches the end
+        # it will move back to the front
 
     def get_history(self):
-        # Extract the valid elements in the circular queue
         history = []
+        # can't do it from self.front to self.rear because sometimes the end index will be smaller than the start index
+        # adding self.size accounts for the end index being less than the start index
         for i in range(self.front, self.front + self.size()):
-            index = i % self.max_size
+            index = i % self.max_size # without % - i would keep increasing with no bounds. also needed due to the wrap around
             history.append(self.gesture_history[index])
         return history
 
     def is_full(self):
-        return (self.rear + 1) % self.max_size == self.front
+        # (self.rear + 1) % self.max_size - calculates the next index after self.rear
+        if (self.rear + 1) % self.max_size == self.front: # check if the next index after rear is equal to front
+            return True
+        else:
+            return False
 
     def size(self):
+        # adding self.max size is needed here as it ensures the value is always non negative
         return (self.rear - self.front + self.max_size) % self.max_size
 
 
@@ -878,7 +884,6 @@ def CalulateHandSize(landmarklist):
     size = math.sqrt((wristx - wristy) ** 2 + (middletipx - middletipy) ** 2)
     print("size: " + str(size))
     return size
-
 
 
 def flattenlist(iterableList):  # ALGORITHM
