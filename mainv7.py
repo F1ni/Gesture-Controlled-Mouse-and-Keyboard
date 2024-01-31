@@ -171,7 +171,6 @@ class Main:
     def OpenGestureHistoryWindow(self):
         gesturehistorywindow = GestureHistoryWindow()
 
-
 # child class
 class GestureSettingsWindow(Main): # inherit properties from the parent class (Main)
     def __init__(self, main, pointeroption, dragclickoption, scrollupoption, scrolldownoption):
