@@ -42,6 +42,9 @@ buttoncolor = "#636363"
 # prediction 3 - closed hand (fist)
 
 pytorchmodel = GestureModel(input_size=42, num_classes=4) # initialise the pytorch model
+path = "model.pth" # stores the file the model is in
+pytorchmodel.load_state_dict(torch.load(path)) # load the saved weights that are in the file
+pytorchmodel.eval() # put the model in evaluate mode
 
 # ---------------- GUI ---------------------------------
 # First window that the user sees
@@ -572,10 +575,10 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1] # x, y coordinates for the thumb tip
 
                     whichhand = whichHand(landmark_list)  # checks which hand is showing - right or left
-                    fingersuplist = fingersUp(landmark_list, whichhand) # checks which fingers are up
+                    fingersuplist = fingersUp(landmark_list, whichhand, fingersuplist) # checks which fingers are up
                     # print(fingersuplist) - debugging
 
-                    # draw on show
+                    # creates the pink box on the frame to represent the screen
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
 
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
@@ -591,7 +594,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         if gesturehistoryqueue.previousgesture != pointergestureoption:
                             gesturehistoryqueue.add_gesture(pointergestureoption)
 
-
+                        # Check what function it is meant to run - this can be changed based on the users preference
                         prevLocX, prevLocY = WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
                                      calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY, frameR,
@@ -599,33 +602,42 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
 
                     # DRAG CLICK ----------------------------------------------------------------------------------------------------------------
-                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
-                        4] == 1:
+                    # if thumb, index and middle finger are up and if 4th finger is down then
+                    elif fingersuplist[0] == 1 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[4] == 1:
                         # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
                         middlefingerup = False
+
+                        # create a line between the top of the index finger to thte top of the middle finger - used for visual feedback
                         cv2.line(img, (xindex, yindex), (xmiddle, ymiddle), (0, 0, 255), 4)
+
+                        # if the previous gesture is not the same as this one, then add this gesture to the queue
                         if gesturehistoryqueue.previousgesture != indexandmiddleoption:
                             gesturehistoryqueue.add_gesture(indexandmiddleoption)
+
+                        # Check what function it is meant to run - this can be changed based on the users preference
                         prevLocX, prevLocY = WhatFunction(indexandmiddleoption, landmark_list, mousesens, mousesmooth, img, "indexandmiddle",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
                                      calibrateddistancefornormalclick, calibrateddistancefordragclick, prevLocX, prevLocY,
                                                           frameR, wCam, hCam)
 
                     # RIGHT CLICK ----------------------------------------------------------------------------------------------------------------
-                    # if index finger is up and middle two fingers are down
+                    # if index finger is up, middle two fingers are down and little finger is up and right click is false
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         3] == 1 and fingersuplist[4] == 1 and not rightclick:
                         normalclickcount = 0
+
+                        # if the previous gesture is not the same as this one (right click), then add this gesture to the queue
                         if gesturehistoryqueue.previousgesture != "Right Click":
                             gesturehistoryqueue.add_gesture("Right Click")
-                        rightclick = True
-                        mouse.right_click()
-                        time.sleep(0.3)
 
-                    # if middle finger is up - get rid of later
+                        rightclick = True # set right click to true so that it doesnt keep repeating right click
+                        mouse.right_click() # using the mouse library to perform a right click
+                        # time.sleep(0.3)
+
+                    # if middle finger is up - get rid of later - omit this from the documentation
                     elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
                         3] == 0 and fingersuplist[4] == 0:
-                        # print("middle finger up")
+
                         if not middlefingerup:
                             middlefingerup = True
                             if gesturehistoryqueue.previousgesture != "Middle Finger":
@@ -633,58 +645,75 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             pyautogui.hotkey("alt", "f4")
 
                     # MOUSE FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------
-                    # gestures like scrolling only available in mouse and keyboard mode
-                    # to make sure they didn't accidentally do a gesture then put the recursive function code in on disc
+
                     else:
                         # print(np.array(normalisedLandmarkList).shape)
-                        # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging
-                        normalclickcount = 0
-                        normalisedLandmarkList = np.array(normalisedLandmarkList,
-                                                          dtype=np.float32)  # the normalised data at first was of type float64, however the
+                        # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging it
+                        normalclickcount = 0 # resets the count if another gesture is shown
+
+                        # the normalised data at first was of type float64, however the
                         # model will only take in data of type float 32, so had to convert it
-                        normalisedLandmarkList = normalisedLandmarkList.reshape(1,
-                                                                                -1)  # -1  is used when you dont know or want
-                        path = "model.pth"
-                        pytorchmodel.load_state_dict(torch.load(path))
-                        pytorchmodel.eval()
+                        normalisedLandmarkList = np.array(normalisedLandmarkList, dtype=np.float32)
+
+                        # 1 is used to show the number of rows, -1 is used as a placeholder to automatically
+                        # calculate the number of columns
+                        normalisedLandmarkList = normalisedLandmarkList.reshape(1, -1)
+
+                        # converts the normalised landmark list into a pytorch tensor with data type float32
                         input_data = torch.tensor(normalisedLandmarkList, dtype=torch.float32)
+
+                        # disables the gradient computation during forward pass for efficiency
                         with torch.no_grad():
+                            # pass the input data into the pytorch model and store result in output
                             output = pytorchmodel(input_data)
 
+                        # get the index of the maximum value in the output tensor
                         prediction = torch.argmax(output).item()
                         print("Prediction: " + str(prediction))
 
-
-                        if prediction == 0:
+                        if prediction == 0: # if prediction is scroll up gesture
                             if gesturehistoryqueue.previousgesture != pointupoption:
                                 gesturehistoryqueue.add_gesture(pointupoption)
+
                             WhichGesture(scrollspeed, pointupoption)
                         elif prediction == 1:
                             if gesturehistoryqueue.previousgesture != pointdownoption:
                                 gesturehistoryqueue.add_gesture(pointdownoption)
+
                             WhichGesture(scrollspeed, pointdownoption)
-                        elif prediction == 2:
+                        elif prediction == 2: # if the prediction is open hand gesture
+                            # calculates the distance between the wrist and tip of the middle finger
                             handsize = CalulateHandSize(landmark_list)
+
+                            # calibrate the distance for a normal click action
+                            # the calibrated distance is set to 128% of the calculated hand size
                             calibrateddistancefornormalclick = int(handsize * 1.28)
+
+                            # calibrate the distance for a drag-click action
+                            # the calibrated distance is set to 30% of the calculated hand size
                             calibrateddistancefordragclick = int(handsize * 0.3)
 
                         middlefingerup = False
+
+                    # if the gesture history queue is not empty
                     if gesturehistoryqueue.size() != 0:
+                        # put the name of the gesture that is being shown on the top right of the camera frame
                         cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear - 1],
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
+                        # set the gesture history list to the previous 5 gestures that the user has put up
                         gesturehistorylist = gesturehistoryqueue.get_history()
-                    print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick))
-                    #print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick))
-            # frame rate
+                    print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick)) # debugging
+                    #print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick)) # debugging
+            # calculate frame rate
             cTime = time.time()
-            fps = 1 / (cTime - pTime)  # float so make into an int
+            fps = 1 / (cTime - pTime)
             pTime = cTime
             cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
             # show image
             cv2.imshow("Gesture Recog", img)
 
-    cap.release()
+    cap.release() # if it breaks out of the loop - then destroy the window
     cv2.destroyAllWindows()
 
 def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, statusgesture, xindex, yindex,
@@ -709,39 +738,51 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     # x and y positions based on smoothening
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-    print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
-    #print("ditsance between index and middle finger: " + str(distance))
+    # print("distancebetweenthumbandindex: " + str(distanceofthumbandindex)) - debugging
+    # print("ditsance between index and middle finger: " + str(distance)) - debugging
+
+    # check the name of function to determine the interaction mode
     if nameoffunction == "pointer":
         rightclick = False
+
+        # draw green circle on image at current hand position for visual feedback
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
+
+        # move cursor to the current hand position
         mouse.move(curLocX, curLocY)
         prevLocX, prevLocY = curLocX, curLocY
 
+        # check gesture status for pointer mode
         if statusgesture == "pointer":
-            if distanceofthumbandindex < distfornormalclick and not normalclick:  # if distance is less than a certain number
-                # coordinates to move mouse. if thumb, index and middle finger are all up and 4th finger is down
-                normalclickcount += 1
+            # check for normal click using the calibrated distance that we calculated when the user puts up an open hand
+            if distanceofthumbandindex < distfornormalclick and not normalclick:
+                normalclickcount += 1 # increment normal click count
                 normalclick = True
 
                 if normalclickcount < 2:
+                    # use mouse library to perform a left click
                     mouse.click()
-                    # print("click")
-
+                    # print("click") - debugging
             else:
-                normalclick = False
+                normalclickcount = 0
+                normalclick = False # reset normal click
+        # check if to perform a drag click
         elif statusgesture == "drag click":
             if distance < distfordragclick and not normalclick:
+                # check for drag click using the calibrated distance that we calculated when the user puts up an open hand
                 normalclickcount += 1
-                normalclick = True  # makes it so that it won't always do the mouse.release function
-                # changed the libraryand it is much smoother now
+                normalclick = True  # makes it so that it won't do the mouse.release function everytime
+                # changed the library to mouse library rather than pyautogui and it is much smoother now
                 if normalclickcount < 2:
                     mouse.click()
                     # print("click")
 
             else:  # so that it does not realease the mouse if the part above never even eran
+                normalclickcount = 0
                 normalclick = False
-
+    # check the name of function to determine the interaction mode
     elif nameoffunction == "drag click":  # drag clicking
+        # draw a green circle on the image at the current hand position
         cv2.circle(img, center=(xindex, yindex), radius=10, color=(0, 255, 0))
         mouse.move(curLocX, curLocY)  # with pyautogui it made fps low so changed
 
@@ -812,7 +853,7 @@ def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv f
         time.sleep(0.5)
 
 
-def fingersUp(landmarkList, which_hand):  # algorithm
+def fingersUp(landmarkList, which_hand, fingersuplist):  # algorithm
     if landmarkList[8][1] < landmarkList[6][1]:
         fingersuplist[0] = 1
     else:
@@ -889,17 +930,17 @@ def WhichGesture(scrollspeed, option):
         mouse.wheel(delta=-1 * scrollspeed)
 
 
-def CalulateHandSize(landmarklist):
+def CalulateHandSize(landmarklist): # calculates the sie of the hand
     # only do if the gesture is the open hand
-    if landmarklist is None:
+    if landmarklist is None: # if nothing in landmark list
         return None
 
-    wristx, wristy = landmarklist[0][0], landmarklist[0][1]
-    middletipx, middletipy = landmarklist[12][0], landmarklist[12][1]
+    wristx, wristy = landmarklist[0][0], landmarklist[0][1] # coordinates from the wrist (x and y, no z)
+    middletipx, middletipy = landmarklist[12][0], landmarklist[12][1] # coordinates for the tip of the middle finger
 
-    size = math.sqrt((wristx - wristy) ** 2 + (middletipx - middletipy) ** 2)
-    print("size: " + str(size))
-    return size
+    size = math.sqrt((wristx - wristy) ** 2 + (middletipx - middletipy) ** 2) # calculate size using those coords
+    print("size: " + str(size)) # debugging
+    return size # returns the size because it is a function
 
 
 def flattenlist(iterableList):  # ALGORITHM
