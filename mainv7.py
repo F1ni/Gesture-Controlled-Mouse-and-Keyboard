@@ -498,42 +498,44 @@ class CircularGestureQueue:  # first in first out
 
 def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, indexandmiddleoption, pointupoption,
                  pointdownoption, topviewcamerabool):
-    global mode
-    global fingersuplist
     global isStopped
     global rightclick
     global normalclickcount
     global gesturehistorylist
-    middlefingerup = False
-    wCam, hCam = 640, 480
-    frameR = 150  # reduce the fram so that you don't have to go right to the bottom of teh screen
 
-    cap = cv2.VideoCapture(0)
-    cap.set(3, wCam)
+    middlefingerup = False
+    wCam, hCam = 640, 480 # width and height of cam
+    frameR = 150  # pink box - reduce the frame so that you don't have to go right to the bottom of the screen
+
+    cap = cv2.VideoCapture(0) # start video capture
+    cap.set(3, wCam) # set the width and height of the cam
     cap.set(4, hCam)
 
-    gesturehistoryqueue = CircularGestureQueue(6)
+    gesturehistoryqueue = CircularGestureQueue(6) # initialise queue of size 6
     pTime = 0  # need for frame rate
-    calibrateddistancefordragclick = 30
+    calibrateddistancefordragclick = 30 # distance that is used to check if a click is made
     calibrateddistancefornormalclick = 30
 
-    prevLocX, prevLocY = 0, 0
+    prevLocX, prevLocY = 0, 0 # initialise smoothening variables
 
     # -----Mediapipe variables------------------------------------------------------------------------
     mp_holistic = mp.solutions.holistic
     mp_drawing = mp.solutions.drawing_utils
     mp_hands = mp.solutions.hands
-    fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, pinky finger, thumb]
+    fingersuplist = [0, 0, 0, 0, 0]  # [index, middle, 4th finger, little finger, thumb]
 
+    # minimum confidence value for a detection to be considered successful
+    # minimum confidence value for a hand to be cosidered successfully tracked
+    # max number of hands is 1 - it will only detect and track one hand no matter how many are placed in frame
+    # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
     with (mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5, max_num_hands=1) as hands):
-        # if someone else puts hand in frame, it will keep detecting the person whose hand was in the frame first
         while cap.isOpened() and not isStopped:
             # break by pressing esc
             key = cv2.waitKey(10)
             if key == 27:  # esc key
                 break
 
-            # code to create the dataset
+            # code to create the dataset - not needed for the final list
             # if key == 107:  # k
             #     mode = 3
             # elif key == 110:  # n
@@ -544,46 +546,51 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             if not success:  # if there is no image then break out of the loop # error handling
                 break
 
-            if topviewcamerabool == 0:
-                img = cv2.flip(img, 1)  # flips the image
-            # detection by mediapipe
-            img, results = DetectHands(img, hands)
+            if topviewcamerabool == 0: # if top view camera is not on then flip the image
+                img = cv2.flip(img, 1)
 
-            # draw hand landmarks
+            # detection by mediapipe
+            img, results = DetectHands(img, hands) # returns two values
+
+            # if there is a hand captured in the frame
             if results.multi_hand_landmarks:
                 for handLandmarks in results.multi_hand_landmarks:
+                    # draw the landmarks on the frame
                     mp_drawing.draw_landmarks(img, handLandmarks, mp_hands.HAND_CONNECTIONS)
-                    # show image here
 
+                    # takes in the handlandmark list and gets rid of the z values of each landmark
                     landmark_list = CalcLandmarkList(img, handLandmarks)
-                    normalisedLandmarkList = normaliseLandmarkList(landmark_list)  # coordinates are in relation to the
+                    # coordinates are normalised between 0 and 1 to be fed into the neural network
+                    normalisedLandmarkList = normaliseLandmarkList(landmark_list)
 
-                    # wrist where the starting of the wrist is the base point
-                    # in total there are 21 hand landmarks so the normalised list gives\
-                    # you 42 for each x and y value
-                    # this list will be used for the neural network
-                    # get tip of index and middle finger
                     # LoggingHandGestures(normalisedLandmarkList) - used to log the data for the dataset
-                    # landmark coordinates
-                    xindex, yindex = landmark_list[8][0], landmark_list[8][1]
-                    xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1]
-                    xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1]
-                    xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1]
 
-                    whichhand = whichHand(landmark_list)  # checks which hand is showing
-                    fingersuplist = fingersUp(landmark_list, whichhand)
-                    print(fingersuplist)
+                    # landmark coordinates
+                    xindex, yindex = landmark_list[8][0], landmark_list[8][1] # x and y coordinates for index finger
+                    xmiddle, ymiddle = landmark_list[12][0], landmark_list[12][1] # x and y coordinates for middle finger
+                    xlowerindex, ylowerindex = landmark_list[6][0], landmark_list[6][1] # x, y coordinates for the lower part of index finger
+                    xthumbtip, ythumbtip = landmark_list[4][0], landmark_list[4][1] # x, y coordinates for the thumb tip
+
+                    whichhand = whichHand(landmark_list)  # checks which hand is showing - right or left
+                    fingersuplist = fingersUp(landmark_list, whichhand) # checks which fingers are up
+                    # print(fingersuplist) - debugging
 
                     # draw on show
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
-                    print()
+
                     # MOUSE FUNCTIONS -------------------------------------------------------------------------------------
+                    # checks if the index finger is up, middle and little fingers are down and if the thumb is up
                     if fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
-                        4] == 1 and fingersuplist[3] == 0:  # now will change the mouse
+                        4] == 1 and fingersuplist[3] == 0:
                         middlefingerup = False
+
+                        # create a line from the tip of the thumb to the lower part of the index finger - used for visual feedback
                         cv2.line(img, (xthumbtip, ythumbtip), (xlowerindex, ylowerindex), (0, 0, 255), 4)
+
+                        # if the previous gesture is not the same as this one, then add this gesture to the queue
                         if gesturehistoryqueue.previousgesture != pointergestureoption:
                             gesturehistoryqueue.add_gesture(pointergestureoption)
+
 
                         prevLocX, prevLocY = WhatFunction(pointergestureoption, landmark_list, mousesens, mousesmooth, img, "pointer",
                                      xindex, yindex, xmiddle, ymiddle, xlowerindex, ylowerindex, xthumbtip, ythumbtip,
@@ -687,11 +694,19 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     global rightclick
     global dragclick
     global normalclickcount
-    screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
+    screenwidth, screenheight = pyautogui.size()  # get resolution of the users
+
+    # calculate x and y positions of the mouse
     xpos = np.interp(xindex, (frameR, wCam - frameR), (0, screenwidth))
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
+
+    # calculate the distance between the thumb and index and convert it to an integer
     distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+
+    # calculate distance between the index and middle finger and convert to an integer
     distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+
+    # x and y positions based on smoothening
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
     print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
@@ -765,18 +780,21 @@ def whichHand(landmarklist):  # algorithm
         return "RIGHT"
 
 
-def CalcLandmarkList(image, landmarks):  # algorithm
+def CalcLandmarkList(image, landmarks):
     img_width, img_height = image.shape[1], image.shape[0]  # gets the width and height of the video screen
-    landmark_point = []
-    for i, landmark in enumerate(landmarks.landmark):  # makes it so that
+    points = []
+    # iterate through each landmark detected by mediapipe
+    for i, landmark in enumerate(landmarks.landmark):
         landmark_x = int(landmark.x * img_width)
         landmark_y = int(landmark.y * img_height)
         # convert the relative coordinates of the landmarks provided by the Mediapipe library into
         # absolute pixel coordinates on the image
 
-        landmark_point.append([landmark_x, landmark_y])
-        # we do not need z point as we do not want to change it / normalise it
-    return landmark_point
+        # append these coordinates into a 2D array
+        points.append([landmark_x, landmark_y])
+        # each landmark is represented by a pair of x and y coords
+        # note: we do not need z point as we do not want to change it / normalise it
+    return points
 
 
 def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
@@ -829,7 +847,7 @@ def fingersUp(landmarkList, which_hand):  # algorithm
     return fingersuplist
 
 
-def normaliseLandmarkList(landmarkList):  # algorithm
+def normaliseLandmarkList(landmarkList):
     # converting to relative coordinates so i can use it in a neural network
     b_x, b_y = 0, 0  # base values, wrist coordinates (x, y)
     for i, lmk_point in enumerate(landmarkList):
@@ -839,10 +857,9 @@ def normaliseLandmarkList(landmarkList):  # algorithm
             b_x = lmk_point[0]  # represents the base coordinates of the wrists x and y position
             b_y = lmk_point[1]
 
-        landmarkList[i][0] = landmarkList[i][
-                                 0] - b_x  # gets each x value and subtracts it from the base value of the wrist
-        # this essentially makes all the points relative to the list
+        landmarkList[i][0] = landmarkList[i][0] - b_x  # gets each x value and subtracts it from the base value of the wrist
         landmarkList[i][1] = landmarkList[i][1] - b_y  # gets each y value
+        # this essentially makes all the points relative to the wrist
 
         # mediapipe will provide 3d coordinates for the landmarks so we will need to flatten them into a 1d vector (2d arrray)
         landmarkList = list(flattenlist(landmarkList))
@@ -857,12 +874,12 @@ def normaliseLandmarkList(landmarkList):  # algorithm
 
 
 def DetectHands(image, handsmodel):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # changes colour
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # changes colour of image so it can be processed
     image.flags.writeable = False  # makes it not writeable
-    result = handsmodel.process(image)
+    result = handsmodel.process(image) # use mediapipe to process the image
     image.flags.writeable = True  # makes it writeable
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    return image, result
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) # change colour back to orginal
+    return image, result # return image and processed result
 
 
 def WhichGesture(scrollspeed, option):
