@@ -14,6 +14,8 @@ from tkinter import *
 import torch
 from PIL import Image, ImageTk
 import threading
+
+# neural network
 from NeuralNetUsingPyTorch import GestureModel
 
 # Boolean -----------------------------------------------------------
@@ -686,12 +688,12 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                             handsize = CalulateHandSize(landmark_list)
 
                             # calibrate the distance for a normal click action
-                            # the calibrated distance is set to 128% of the calculated hand size
-                            calibrateddistancefornormalclick = int(handsize * 1.28)
+                            # the calibrated distance is set to 30% of the calculated hand size - 1.28 for laptop?
+                            calibrateddistancefornormalclick = int(handsize * 0.3)
 
                             # calibrate the distance for a drag-click action
-                            # the calibrated distance is set to 30% of the calculated hand size
-                            calibrateddistancefordragclick = int(handsize * 0.3)
+                            # the calibrated distance is set to 20% of the calculated hand size - 0.3 for laptop
+                            calibrateddistancefordragclick = int(handsize * 0.2)
 
                         middlefingerup = False
 
@@ -738,7 +740,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     # x and y positions based on smoothening
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
     curLocY = prevLocY + (ypos - prevLocY) / (mousesmooth * mousesens)
-    # print("distancebetweenthumbandindex: " + str(distanceofthumbandindex)) - debugging
+    print("distancebetweenthumbandindex: " + str(distanceofthumbandindex))
     # print("ditsance between index and middle finger: " + str(distance)) - debugging
 
     # check the name of function to determine the interaction mode
@@ -755,27 +757,30 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         # check gesture status for pointer mode
         if statusgesture == "pointer":
             # check for normal click using the calibrated distance that we calculated when the user puts up an open hand
-            if distanceofthumbandindex < distfornormalclick and not normalclick:
-                normalclickcount += 1 # increment normal click count
-                normalclick = True
+            if distanceofthumbandindex < distfornormalclick:
+                # having it here makes it so that this still happens and does not go to the else statement
+                if not normalclick:
+                    normalclickcount += 1 # increment normal click count
+                    normalclick = True
 
-                if normalclickcount < 2:
-                    # use mouse library to perform a left click
-                    mouse.click()
-                    # print("click") - debugging
+                    if normalclickcount < 2:
+                        # use mouse library to perform a left click
+                        mouse.click()
+                        # print("click") - debugging
             else:
                 normalclickcount = 0
                 normalclick = False # reset normal click
         # check if to perform a drag click
         elif statusgesture == "drag click":
-            if distance < distfordragclick and not normalclick:
-                # check for drag click using the calibrated distance that we calculated when the user puts up an open hand
-                normalclickcount += 1
-                normalclick = True  # makes it so that it won't do the mouse.release function everytime
-                # changed the library to mouse library rather than pyautogui and it is much smoother now
-                if normalclickcount < 2:
-                    mouse.click()
-                    # print("click")
+            if distance < distfordragclick:
+                if not normalclick:
+                    # check for drag click using the calibrated distance that we calculated when the user puts up an open hand
+                    normalclickcount += 1
+                    normalclick = True  # makes it so that it won't do the mouse.release function everytime
+                    # changed the library to mouse library rather than pyautogui and it is much smoother now
+                    if normalclickcount < 2:
+                        mouse.click()
+                        # print("click")
 
             else:  # so that it does not realease the mouse if the part above never even eran
                 normalclickcount = 0
@@ -815,7 +820,8 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
 
 def whichHand(landmarklist):  # algorithm
     if (landmarklist[20][0] - landmarklist[16][0]) < 0:
-        # checks if tip of the pinky finger - 4th finger is negative which means it will be left hand
+        # tip of the pinky finger minus the tip of the 4th finger - if it is negative it means it
+        # is your left hand else it is your right had
         return "LEFT"
     else:
         return "RIGHT"
@@ -838,49 +844,61 @@ def CalcLandmarkList(image, landmarks):
     return points
 
 
-def LoggingHandGestures(normalised_landmark_list):  # logs the list into a csv file so the neural network can use it to compare, ALGORITHM
+# used to create the dataset that was passed into the neural network
+def LoggingHandGestures(normalised_landmark_list):
+    # logs the list into a csv file so the neural network can use it to compare and make a prediction
     if mode == 3:
         print("logging")
         gesturespath = 'Model/gestures.csv'
-        openedfile = open(gesturespath, 'a', newline='')  # opens the path of the gestures folder and makes it writeable
-        # makes it so that no new line is created
+        # opens the path of the gestures folder and makes it writeable - 'a' means opened for appending
+        openedfile = open(gesturespath, 'a', newline='') # makes it so that no new line is created
+
         writer = csv.writer(openedfile)  # opened using csv writer
-        writer.writerow([4, *normalised_landmark_list])  # writes the row with a 3 at the beginning and then
+        writer.writerow([4, *normalised_landmark_list])  # writes the row with a 3 at the beginning
+        # The * symbol is used to unpack the array elements into individual values within the row.
+
         # screenshot of this not working on discord server
         # it still kept overwriting the data so this did not work
         # instead of writing it should be a which means appending
-        #  The * symbol is used to unpack the array elements into individual values within the row.
+
         time.sleep(0.5)
 
 
-def fingersUp(landmarkList, which_hand, fingersuplist):  # algorithm
+def fingersUp(landmarkList, which_hand, fingersuplist):
+    # checks if the tip of the index finger is above the the middle of the index finger
     if landmarkList[8][1] < landmarkList[6][1]:
-        fingersuplist[0] = 1
+        fingersuplist[0] = 1 # if it is then set index 0 to 1
     else:
         fingersuplist[0] = 0
 
+    # checks if the tip of the middle finger is above the the middle of the middle finger
     if landmarkList[12][1] < landmarkList[10][1]:
         fingersuplist[1] = 1
     else:
         fingersuplist[1] = 0
 
+    # checks if the tip of the ring finger is above the the middle of the ring finger
     if landmarkList[16][1] < landmarkList[14][1]:
         fingersuplist[2] = 1
     else:
         fingersuplist[2] = 0
 
+    # check if the tip of the little finger is above the middle of little finger
     if landmarkList[20][1] < landmarkList[18][1]:
         fingersuplist[3] = 1
     else:
         fingersuplist[3] = 0
 
-    if which_hand == "RIGHT" and landmarkList[4][0] < landmarkList[2][
-        0]:  # Right Thumb # checks if the x coord of the tip of the thumb is
-        # less than the index 2 landmark
+
+    if which_hand == "RIGHT" and landmarkList[4][1] < landmarkList[2][
+        1]:  # Right Thumb
+        # checks if the x coord of the tip of the thumb is
+        # less than the bottom of the index finger landmark
         fingersuplist[4] = 1
-    elif which_hand == "LEFT" and landmarkList[4][0] > landmarkList[2][
-        0]:  # Left Thumb # checks if the x coord of the tip of the thumb is
-        # greater than the index 2 landmark
+    elif which_hand == "LEFT" and landmarkList[4][1] > landmarkList[2][
+        1]:  # Left Thumb
+        # checks if the x coord of the tip of the thumb is
+        # greater than the bottom of the index finger landmark
         fingersuplist[4] = 1
     else:
         fingersuplist[4] = 0
@@ -925,7 +943,7 @@ def DetectHands(image, handsmodel):
 
 def WhichGesture(scrollspeed, option):
     if option == "scroll up":
-        mouse.wheel(delta=1 * scrollspeed)
+        mouse.wheel(delta=1 * scrollspeed) # use the mouse library to perform the scroll up
     else:
         mouse.wheel(delta=-1 * scrollspeed)
 
