@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import mouse
 
-# does not count as a library
+
 import math
 import numpy as np
 import pyautogui
