@@ -480,6 +480,12 @@ class CircularGestureQueue:  # first in first out
         self.rear = (self.rear + 1) % self.max_size  # increases the rear index by 1, then when it reaches the end
         # it will move back to the front
 
+    def Dequeue(self):
+        if self.is_full():
+            return "Empty"
+        else:
+            return self.get_history()[self.rear - 1]
+
     def get_history(self):
         history = []
         # can't do it from self.front to self.rear because sometimes the end index will be smaller than the start index
@@ -579,7 +585,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     whichhand = whichHand(landmark_list)  # checks which hand is showing - right or left
                     fingersuplist = fingersUp(landmark_list, whichhand, fingersuplist) # checks which fingers are up
                     # print(fingersuplist) - debugging
-
+                    print(fingersuplist)
+                    # print(landmark_list)
                     # creates the pink box on the frame to represent the screen
                     cv2.rectangle(img, (100, 100), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
 
@@ -700,7 +707,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     # if the gesture history queue is not empty
                     if gesturehistoryqueue.size() != 0:
                         # put the name of the gesture that is being shown on the top right of the camera frame
-                        cv2.putText(img, gesturehistoryqueue.get_history()[gesturehistoryqueue.rear - 1],
+                        cv2.putText(img, gesturehistoryqueue.Dequeue(),
                                     (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
 
                         # set the gesture history list to the previous 5 gestures that the user has put up
@@ -889,14 +896,15 @@ def fingersUp(landmarkList, which_hand, fingersuplist):
     else:
         fingersuplist[3] = 0
 
+    print(landmarkList[4][1], landmarkList[3][1])
 
-    if which_hand == "RIGHT" and landmarkList[4][1] < landmarkList[2][
-        1]:  # Right Thumb
+    if which_hand == "RIGHT" and landmarkList[4][0] < landmarkList[5][
+        0]:  # Right Thumb
         # checks if the x coord of the tip of the thumb is
         # less than the bottom of the index finger landmark
         fingersuplist[4] = 1
-    elif which_hand == "LEFT" and landmarkList[4][1] > landmarkList[2][
-        1]:  # Left Thumb
+    elif which_hand == "LEFT" and landmarkList[4][0] > landmarkList[5][
+        0]:  # Left Thumb
         # checks if the x coord of the tip of the thumb is
         # greater than the bottom of the index finger landmark
         fingersuplist[4] = 1
