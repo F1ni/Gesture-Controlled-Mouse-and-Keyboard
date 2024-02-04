@@ -482,10 +482,10 @@ class CircularGestureQueue:  # first in first out
         # it will move back to the front
 
     def Dequeue(self):
-        if self.is_full():
+        try:
+            return self.gesture_history[self.rear - 1]
+        except:
             return "Empty"
-        else:
-            return self.get_history()[self.rear - 1]
 
     def get_history(self):
         history = []
