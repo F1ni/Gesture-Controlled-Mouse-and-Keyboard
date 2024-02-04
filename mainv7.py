@@ -436,7 +436,8 @@ class InstructionsWindow:
                                            "the capture\n\nMOUSE SETTINGS WINDOW:\nIn this window you can change the sensitivity, smoothness or scrolling speed."
                                            "After you are happy with the changes, press the BACK button and relaunch the capture\n\nDEFAULT SETTINGS BUTTON:"
                                            "\nThe default settings are the values that I think are the most useable. Press this button, to change back"
-                                           "to the original settings. Then restart the application")
+                                           "to the original settings. Then restart the application\nNOTE: If the program is to crash, check if there\n"
+                                           "is a camera attached to the device")
         instructionstextwidget.config(state=DISABLED) # disable the widget so that you are unable to edit it
 
         instructionsframe.pack()
