@@ -740,10 +740,10 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     ypos = np.interp(yindex, (frameR, hCam - frameR), (0, screenheight))
 
     # calculate the distance between the thumb and index and convert it to an integer
-    distanceofthumbandindex = int(math.sqrt(((xlowerindex - xthumbtip) ** 2) + ((ylowerindex - ythumbtip) ** 2)))
+    distanceofthumbandindex = CalculateDistanceBetweenPoint(xlowerindex, ylowerindex, xthumbtip, ythumbtip)
 
     # calculate distance between the index and middle finger and convert to an integer
-    distance = int(math.sqrt(((xmiddle - xindex) ** 2) + ((ymiddle - yindex) ** 2)))
+    distance = CalculateDistanceBetweenPoint(xmiddle, ymiddle, xindex, yindex)
 
     # x and y positions based on smoothening
     curLocX = prevLocX + (xpos - prevLocX) / (mousesmooth * mousesens)
@@ -975,6 +975,8 @@ def flattenlist(iterableList):  # ALGORITHM
         for element in it:
             yield element
 
+def CalculateDistanceBetweenPoint(xpoint1, ypoint1, xpoint2, ypoint2):
+    return int(math.sqrt(((xpoint1 - xpoint2) ** 2) + ((ypoint1 - ypoint2) ** 2)))
 
 root = Tk()
 
