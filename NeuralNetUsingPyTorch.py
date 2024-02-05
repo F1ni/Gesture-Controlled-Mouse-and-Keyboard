@@ -39,52 +39,65 @@ class GestureModel(nn.Module):
         x = torch.softmax(self.fc3(x), dim=1)
         return x
 
-# model = GestureModel(input_size=21 * 2, num_classes=number_of_gestures)
-#
-# # Set device and move model to device (GPU if available)
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model.to(device)
-#
-# # Loss function and optimizer
-# criterion = nn.CrossEntropyLoss()
-# optimizer = optim.Adam(model.parameters())
-#
-# # Training loop
-# epochs = 1000
-# batch_size = 4
-#
-# val_losses = []  # Initialize val_losses list
-#
-# for epoch in range(epochs):
-#     # Training
-#     model.train()
-#     optimizer.zero_grad()
-#     outputs = model(X_train.float().to(device))
-#     loss = criterion(outputs, y_train.to(device))
-#     loss.backward()
-#     optimizer.step()
-#
-#     # Validation
-#     model.eval()
-#     with torch.no_grad():
-#         val_outputs = model(X_test.float().to(device))
-#         val_loss = criterion(val_outputs, y_test.to(device))
-#
-#     # Print and save logs
-#     print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}")
-#
-#     # Early stopping
-#     if epoch > 20 and val_loss >= min(val_losses[-20:]):
-#         print("Early stopping.")
-#         break
-#
-#     val_losses.append(val_loss.item())  # Append val_loss to val_losses list
-#
-# # Save the trained model only if early stopping is not triggered
-# if epoch <= 1000:
-#     model_save_path = "model.pth"
-#     torch.save(model.state_dict(), model_save_path)
-#     print(f"Model saved to {model_save_path}")
+model = GestureModel(input_size=21 * 2, num_classes=number_of_gestures)
+
+# Set device and move model to device (GPU if available)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+# Loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters())
+
+# Training loop
+epochs = 1000
+batch_size = 4
+
+val_losses = []  # Initialize val_losses list
+
+for epoch in range(epochs):
+    # Training
+    model.train()
+    optimizer.zero_grad()
+    outputs = model(X_train.float().to(device))
+    loss = criterion(outputs, y_train.to(device))
+    loss.backward()
+    optimizer.step()
+
+    #----------
+    _, predicted_train = outputs.max(dim=1)
+    correct_train = (predicted_train == y_train.to(device)).sum().item()
+    total_train = y_train.size(0)
+    accuracy_train = correct_train / total_train
+
+    # Validation
+    model.eval()
+    with torch.no_grad():
+        val_outputs = model(X_test.float().to(device))
+        val_loss = criterion(val_outputs, y_test.to(device))
+
+        _, predicted_val = val_outputs.max(dim=1)
+        correct_val = (predicted_val == y_test.to(device)).sum().item()
+        total_val = y_test.size(0)
+        accuracy_val = correct_val / total_val
+
+    # Print and save logs
+    # print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}")
+    print(
+        f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}, Train Accuracy: {accuracy_train}, Val Accuracy: {accuracy_val}")
+
+    # Early stopping
+    if epoch > 20 and val_loss >= min(val_losses[-20:]):
+        print("Early stopping.")
+        break
+
+    val_losses.append(val_loss.item())  # Append val_loss to val_losses list
+
+# Save the trained model only if early stopping is not triggered
+if epoch <= 1000:
+    model_save_path = "model.pth"
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model saved to {model_save_path}")
 
 # is it cos i created the directory on the laptop instead of the computer? - no it wasnt
 # it was because it needed to be in the file model.pth
