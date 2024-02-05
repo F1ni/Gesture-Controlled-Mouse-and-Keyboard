@@ -64,12 +64,6 @@ for epoch in range(epochs):
     loss.backward()
     optimizer.step()
 
-    #----------
-    _, predicted_train = outputs.max(dim=1)
-    correct_train = (predicted_train == y_train.to(device)).sum().item()
-    total_train = y_train.size(0)
-    accuracy_train = correct_train / total_train
-
     # Validation
     model.eval()
     with torch.no_grad():
@@ -81,19 +75,18 @@ for epoch in range(epochs):
         total_val = y_test.size(0)
         accuracy_val = correct_val / total_val
 
-    # Print and save logs
-    # print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}")
+    # print
     print(
-        f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}, Train Accuracy: {accuracy_train}, Val Accuracy: {accuracy_val}")
+        f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}, Val Loss: {val_loss.item()}, Val Accuracy: {accuracy_val}")
 
     # Early stopping
     if epoch > 20 and val_loss >= min(val_losses[-20:]):
         print("Early stopping.")
         break
 
-    val_losses.append(val_loss.item())  # Append val_loss to val_losses list
+    val_losses.append(val_loss.item())  # append val_loss to val_losses list
 
-# Save the trained model only if early stopping is not triggered
+# save the trained model only if early stopping is not triggered
 if epoch <= 1000:
     model_save_path = "model.pth"
     torch.save(model.state_dict(), model_save_path)
