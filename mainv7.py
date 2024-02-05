@@ -15,7 +15,7 @@ import torch
 from PIL import Image, ImageTk
 import threading
 
-# neural network
+# importing neural network class from the file
 from NeuralNetUsingPyTorch import GestureModel
 
 # Boolean -----------------------------------------------------------
@@ -25,7 +25,7 @@ rightclick = False
 isStopped = False
 
 # -------------------------------------------------------------------------------------
-normalclickcount = 0
+
 gesturehistorylist = []
 # Used to create the dataset -------------------------------------------------------------
 # mode = 0
@@ -505,7 +505,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                  pointdownoption, topviewcamerabool):
     global isStopped
     global rightclick
-    global normalclickcount
     global gesturehistorylist
 
     middlefingerup = False
@@ -626,7 +625,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     # if index finger is up, middle two fingers are down and little finger is up and right click is false
                     elif fingersuplist[0] == 1 and fingersuplist[1] == 0 and fingersuplist[
                         3] == 1 and fingersuplist[4] == 1 and not rightclick:
-                        normalclickcount = 0
+
 
                         # if the previous gesture is not the same as this one (right click), then add this gesture to the queue
                         if gesturehistoryqueue.previousgesture != "Right Click":
@@ -634,7 +633,6 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                         rightclick = True # set right click to true so that it doesnt keep repeating right click
                         mouse.right_click() # using the mouse library to perform a right click
-                        # time.sleep(0.3)
 
                     # if middle finger is up - get rid of later - omit this from the documentation
                     elif fingersuplist[0] == 0 and fingersuplist[1] == 1 and fingersuplist[2] == 0 and fingersuplist[
@@ -651,7 +649,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     else:
                         # print(np.array(normalisedLandmarkList).shape)
                         # print(np.array(normalisedLandmarkList).dtype) # neural network giving an error so debugging it
-                        normalclickcount = 0 # resets the count if another gesture is shown
+
 
                         # the normalised data at first was of type float64, however the
                         # model will only take in data of type float 32, so had to convert it
@@ -724,7 +722,6 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     global normalclick
     global rightclick
     global dragclick
-    global normalclickcount
     screenwidth, screenheight = pyautogui.size()  # get resolution of the users
 
     # calculate x and y positions of the mouse
@@ -763,27 +760,26 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
                     normalclickcount += 1 # increment normal click count
                     normalclick = True
 
-                    if normalclickcount < 2:
-                        # use mouse library to perform a left click
-                        mouse.click()
-                        # print("click") - debugging
+
+                    # use mouse library to perform a left click
+                    mouse.click()
+                    # print("click") - debugging
             else:
-                normalclickcount = 0
                 normalclick = False # reset normal click
         # check if to perform a drag click
         elif statusgesture == "drag click":
             if distance < distfordragclick:
                 if not normalclick:
                     # check for drag click using the calibrated distance that we calculated when the user puts up an open hand
-                    normalclickcount += 1
+
                     normalclick = True  # makes it so that it won't do the mouse.release function everytime
                     # changed the library to mouse library rather than pyautogui and it is much smoother now
-                    if normalclickcount < 2:
-                        mouse.click()
+
+                    mouse.click()
                         # print("click")
 
             else:  # so that it does not realease the mouse if the part above never even eran
-                normalclickcount = 0
+
                 normalclick = False
     # check the name of function to determine the interaction mode
     elif nameoffunction == "drag click":  # drag clicking
@@ -793,7 +789,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
 
          # to mouse library
         prevLocX, prevLocY = curLocX, curLocY
-        normalclickcount = 0
+
         # print(distance)
         if statusgesture == "pointer":
             if distanceofthumbandindex < distfornormalclick:  # if distance is less than a certain number

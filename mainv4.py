@@ -36,7 +36,7 @@ rightclick = False
 isStopped = False
 
 # -----------------------------------------------------------------------------------------------------------------------------------
-normalclickcount = 0
+
 smoothening = 7  # slider for this, might not need this
 # -----------------------------------------------------------------------------------------------------------------------------------
 screenwidth, screenheight = pyautogui.size()  # get resolution of the users screen
@@ -281,7 +281,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global fingersuplist
     global isStopped
     global rightclick
-    global normalclickcount
+
     global gesturehistorylist
     middlefingerup = False
     cap = cv2.VideoCapture(0)
