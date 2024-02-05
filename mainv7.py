@@ -774,7 +774,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
             if distanceofthumbandindex < distfornormalclick:
                 # having it here makes it so that this still happens and does not go to the else statement
                 if not normalclick:
-                    normalclickcount += 1 # increment normal click count
+
                     normalclick = True
 
 
