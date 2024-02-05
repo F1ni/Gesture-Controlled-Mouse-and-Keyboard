@@ -361,9 +361,18 @@ class MouseSettingsWindow(Main):
         self.scrollSlider.pack()
         scrollingframe.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
+        defaultsettingsbutton = Button(mousesettingswindow, text="Default Settings", bg=buttoncolor,
+                                       fg=textcolor, command=self.DefaultSettings)
+        defaultsettingsbutton.grid(row=4, column=1)
+
         backbutton = Button(mousesettingswindow, text="BACK", bg=buttoncolor, fg=textcolor,
                             command=lambda: self.Back(mousesettingswindow))
         backbutton.grid(row=4, column=0)
+
+    def DefaultSettings(self): # Overrides the method in main, demonstrating polymorphism
+        self.sensitivityslider.set(1)
+        self.smoothSlider.set(4)
+        self.scrollSlider.set(2)
 
     def Back(self, window):
         # submitting data back to the main menu screen using the variables that were inherited
