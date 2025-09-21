@@ -113,6 +113,8 @@ path = "model.pth" # stores the file the model is in
 pytorchmodel.load_state_dict(torch.load(path)) # load the saved weights that are in the file
 pytorchmodel.eval() # put the model in evaluate mode
 
+distanceofthumbandindex = None
+
 # ---------------- GUI ---------------------------------
 # First window that the user sees
 class Main:
@@ -587,6 +589,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
     global isStopped
     global rightclick
     global gesturehistorylist
+    global distanceofthumbandindex
 
     middlefingerup = False
     wCam, hCam = 1280, 720 # width and height of cam
@@ -649,9 +652,10 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             # detection by mediapipe
             img, results = DetectHands(img, hands) # returns two values
 
+
             # Default: no hover
-            hovered = set()
-            current_time = time.time()
+            # hovered = set()
+            # current_time = time.time()
             key_states = {button.label: {'pressed': False, "hovered": None} for button in buttons}
 
             # if there is a hand captured in the frame and only one hand the activate mouse
@@ -805,9 +809,9 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                     print("calibrateddistance for normal click: " + str(calibrateddistancefornormalclick)) # debugging
                     #print("calibrateddistance for drag click: " + str(calibrateddistancefordragclick)) # debugging
 
-            elif results.multi_hand_landmarks and len(results.multi_hand_landmarks) > 1:
+            elif results.multi_hand_landmarks and len(results.multi_hand_landmarks) == 2:
                 # keyboard mode
-                currently_pressed = set()
+                #currently_pressed = set()
                 for hand_id, hand_landmarks in enumerate(results.multi_hand_landmarks):
                     handedness = results.multi_handedness[hand_id].classification[0].label
                     mp_drawing.draw_landmarks(img, hand_landmarks, mp_hands.HAND_CONNECTIONS)
@@ -816,7 +820,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
                         finger = hand_landmarks.landmark[fingertip_id]
                         fingerAndHandId = (handedness, fingertip_id)
                         finger_x, finger_y = int(finger.x * w), int(finger.y * h)
-                        finger_z = finger.z
+                        # finger_z = finger.z
                         hovered_key = None
                         for button in buttons:
                             if button.contains(finger_x, finger_y):
@@ -853,9 +857,12 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
                 # draw the buttons
                 for button in buttons:
-                    is_pressed = key_states[button.label]['hovered']
+                    is_pressed = key_states[button.label]['pressed']
+                    is_hovered = key_states[button.label]['hovered']
                     if is_pressed:
                         button.draw(img, pressed=True)  # green
+                    elif is_hovered:
+                        button.draw(img, (144, 213, 255))
                     else:
                         button.draw(img)
             # calculate frame rate
@@ -863,6 +870,8 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
             fps = 1 / (cTime - pTime)
             pTime = cTime
             cv2.putText(img, str(int(fps)), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+            cv2.putText(img, "Calibration: " + str(calibrateddistancefornormalclick) + "   Current: " + str(distanceofthumbandindex),
+                        (70, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
             # show image
             cv2.imshow("Gesture Recog", img)
 
@@ -875,6 +884,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
     global normalclick
     global rightclick
     global dragclick
+    global distanceofthumbandindex
     screenwidth, screenheight = pyautogui.size()  # get resolution of the users
 
     # calculate x and y positions of the mouse
