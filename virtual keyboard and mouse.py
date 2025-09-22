@@ -593,7 +593,7 @@ def MainFunction(mousesens, mousesmooth, scrollspeed, pointergestureoption, inde
 
     middlefingerup = False
     wCam, hCam = 1280, 720 # width and height of cam
-    frameR = 150  # pink box - reduce the frame so that you don't have to go right to the bottom of the screen
+    frameR = 200  # pink box - reduce the frame so that you don't have to go right to the bottom of the screen
 
     cap = cv2.VideoCapture(0) # start video capture
     cap.set(3, wCam) # set the width and height of the cam
