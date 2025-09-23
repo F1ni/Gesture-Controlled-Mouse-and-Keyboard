@@ -917,7 +917,7 @@ def WhatFunction(nameoffunction, landmark_list, mousesens, mousesmooth, img, sta
         # check gesture status for pointer mode
         if statusgesture == "pointer":
             # check for normal click using the calibrated distance that we calculated when the user puts up an open hand
-            if distanceofthumbandindex < distfornormalclick:
+            if distanceofthumbandindex < 70:# distfornormalclick:
                 # having it here makes it so that this still happens and does not go to the else statement
                 if not normalclick:
 
