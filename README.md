@@ -1,0 +1,3 @@
+- add read me
+- add requirements (libraries and versions)
+- 
