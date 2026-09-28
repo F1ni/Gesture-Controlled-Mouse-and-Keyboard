@@ -1,0 +1,6 @@
+# Python 3.14-compatible releases for 64-bit Windows.
+# MediaPipe supplies the matching NumPy and OpenCV dependencies.
+mediapipe==0.10.32
+torch==2.14.0
+mouse==0.7.1
+PyAutoGUI==0.9.54
