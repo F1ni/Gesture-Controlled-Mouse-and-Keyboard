@@ -4,7 +4,7 @@ A hands-free computer control application built with Python and computer vision.
 
 ## Demo
 
-[▶ Watch the demo video](download.mp4)
+[▶ Watch the demo video on LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7376743246259036161/)
 
 ## Features
 
